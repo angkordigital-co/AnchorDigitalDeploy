@@ -12,7 +12,7 @@ Build a self-hosted serverless deployment platform for Next.js applications on A
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Infrastructure & Build** - AWS foundation and automated build pipeline
+- [x] **Phase 1: Infrastructure & Build** - AWS foundation and automated build pipeline
 - [ ] **Phase 2: Deployment & CDN** - Serverless deployment with custom domains
 - [ ] **Phase 3: Dashboard & Observability** - Management UI and production monitoring
 
@@ -35,10 +35,10 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 4 plans
 
 Plans:
-- [ ] 01-01-PLAN.md — SST Infrastructure Foundation (DynamoDB + S3 with lifecycle policies)
-- [ ] 01-02-PLAN.md — GitHub Webhook Integration (API Gateway + signature validation)
-- [ ] 01-03-PLAN.md — Build Pipeline (CodeBuild + SQS orchestration with OpenNext)
-- [ ] 01-04-PLAN.md — Environment Variables & Build Logs (configuration + CloudWatch)
+- [x] 01-01-PLAN.md — SST Infrastructure Foundation (DynamoDB + S3 with lifecycle policies)
+- [x] 01-02-PLAN.md — GitHub Webhook Integration (API Gateway + signature validation)
+- [x] 01-03-PLAN.md — Build Pipeline (CodeBuild + SQS orchestration with OpenNext)
+- [x] 01-04-PLAN.md — Environment Variables & Build Logs (configuration + CloudWatch)
 
 ### Phase 2: Deployment & CDN
 **Goal**: Next.js sites deploy to Lambda with custom domains and automatic SSL
@@ -89,6 +89,6 @@ Phases execute in numeric order: 1 → 2 → 3
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Infrastructure & Build | 0/4 | Ready to execute | - |
-| 2. Deployment & CDN | 0/2 | Not started | - |
+| 1. Infrastructure & Build | 4/4 | Complete | 2026-02-01 |
+| 2. Deployment & CDN | 0/2 | Ready to execute | - |
 | 3. Dashboard & Observability | 0/2 | Not started | - |
