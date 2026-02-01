@@ -1,11 +1,16 @@
 import {
   CodeBuildClient,
   StartBuildCommand,
+  EnvironmentVariable,
 } from "@aws-sdk/client-codebuild";
 import {
   DynamoDBClient,
   UpdateItemCommand,
+  GetItemCommand,
 } from "@aws-sdk/client-dynamodb";
+import { unmarshall } from "@aws-sdk/util-dynamodb";
+
+import type { EnvVar } from "../../core/schemas/project.js";
 
 /**
  * Build Orchestrator Lambda
@@ -15,9 +20,10 @@ import {
  *
  * Flow:
  * 1. Receive SQS message with build job details
- * 2. Update deployment status to "building"
- * 3. Start CodeBuild project with environment variables
- * 4. Store buildId in deployment record for log streaming
+ * 2. Fetch project to get environment variables
+ * 3. Update deployment status to "building"
+ * 4. Start CodeBuild project with environment variables (including project env vars)
+ * 5. Store buildId in deployment record for log streaming
  *
  * CRITICAL: This is fire-and-forget. We don't wait for CodeBuild to complete.
  * CodeBuild updates deployment status itself in the post_build phase.
@@ -98,47 +104,104 @@ async function updateDeploymentStatus(
 }
 
 /**
+ * Fetch project environment variables from DynamoDB
+ *
+ * @param projectId - The project's unique ID
+ * @returns Array of environment variables, or empty array if project not found
+ */
+async function getProjectEnvVars(projectId: string): Promise<EnvVar[]> {
+  const result = await dynamodb.send(
+    new GetItemCommand({
+      TableName: process.env.PROJECTS_TABLE!,
+      Key: {
+        projectId: { S: projectId },
+      },
+      ProjectionExpression: "envVars",
+    })
+  );
+
+  if (!result.Item) {
+    console.log(`[WARN] Project not found for env vars: ${projectId}`);
+    return [];
+  }
+
+  const item = unmarshall(result.Item);
+  return (item.envVars as EnvVar[]) || [];
+}
+
+/**
  * Start CodeBuild project with build job parameters
+ *
+ * Fetches project environment variables and includes them in the build.
+ * NODE_ENV=production is always set (CodeBuild doesn't set this by default).
  *
  * @param job - Build job details from SQS message
  * @returns CodeBuild build ID
  */
 async function startCodeBuild(job: BuildJobMessage): Promise<string> {
+  // Fetch project environment variables
+  const projectEnvVars = await getProjectEnvVars(job.projectId);
+
+  console.log(`[ENV] Found ${projectEnvVars.length} project environment variables`, {
+    projectId: job.projectId,
+    keys: projectEnvVars.map((ev) => ev.key),
+  });
+
+  // Build environment variables override
+  // Start with system variables, then add project env vars
+  const environmentVariablesOverride: EnvironmentVariable[] = [
+    // System variables (required for build)
+    {
+      name: "PROJECT_ID",
+      value: job.projectId,
+      type: "PLAINTEXT",
+    },
+    {
+      name: "REPO_URL",
+      value: job.repoUrl,
+      type: "PLAINTEXT",
+    },
+    {
+      name: "COMMIT_SHA",
+      value: job.commitSha,
+      type: "PLAINTEXT",
+    },
+    {
+      name: "DEPLOYMENT_ID",
+      value: job.deploymentId,
+      type: "PLAINTEXT",
+    },
+    {
+      name: "ARTIFACTS_BUCKET",
+      value: process.env.ARTIFACTS_BUCKET!,
+      type: "PLAINTEXT",
+    },
+    {
+      name: "DEPLOYMENTS_TABLE",
+      value: process.env.DEPLOYMENTS_TABLE!,
+      type: "PLAINTEXT",
+    },
+    // CRITICAL: NODE_ENV must be production for Next.js builds
+    // CodeBuild doesn't set this by default
+    {
+      name: "NODE_ENV",
+      value: "production",
+      type: "PLAINTEXT",
+    },
+    // Project environment variables (NEXT_PUBLIC_*, API_URL, etc.)
+    // These are set by users via the API and stored in DynamoDB
+    ...projectEnvVars.map((ev) => ({
+      name: ev.key,
+      value: ev.value,
+      // TODO: Phase 2 - use SECRETS_MANAGER type for isSecret=true
+      type: "PLAINTEXT" as const,
+    })),
+  ];
+
   const response = await codebuild.send(
     new StartBuildCommand({
       projectName: process.env.CODEBUILD_PROJECT!,
-      environmentVariablesOverride: [
-        {
-          name: "PROJECT_ID",
-          value: job.projectId,
-          type: "PLAINTEXT",
-        },
-        {
-          name: "REPO_URL",
-          value: job.repoUrl,
-          type: "PLAINTEXT",
-        },
-        {
-          name: "COMMIT_SHA",
-          value: job.commitSha,
-          type: "PLAINTEXT",
-        },
-        {
-          name: "DEPLOYMENT_ID",
-          value: job.deploymentId,
-          type: "PLAINTEXT",
-        },
-        {
-          name: "ARTIFACTS_BUCKET",
-          value: process.env.ARTIFACTS_BUCKET!,
-          type: "PLAINTEXT",
-        },
-        {
-          name: "DEPLOYMENTS_TABLE",
-          value: process.env.DEPLOYMENTS_TABLE!,
-          type: "PLAINTEXT",
-        },
-      ],
+      environmentVariablesOverride,
     })
   );
 
@@ -150,6 +213,7 @@ async function startCodeBuild(job: BuildJobMessage): Promise<string> {
   console.log(`[CODEBUILD] Started build ${buildId}`, {
     projectId: job.projectId,
     commitSha: job.commitSha.slice(0, 7),
+    envVarCount: projectEnvVars.length,
   });
 
   return buildId;

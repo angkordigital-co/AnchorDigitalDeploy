@@ -16,7 +16,7 @@
  */
 
 import { artifactsBucket } from "./storage.js";
-import { deploymentsTable } from "./database.js";
+import { deploymentsTable, projectsTable } from "./database.js";
 
 /**
  * Dead Letter Queue for failed build jobs
@@ -255,15 +255,17 @@ cache:
  * - CODEBUILD_PROJECT: CodeBuild project name
  * - ARTIFACTS_BUCKET: S3 bucket for build artifacts
  * - DEPLOYMENTS_TABLE: DynamoDB table for status updates
+ * - PROJECTS_TABLE: DynamoDB table for fetching project env vars
  */
 export const buildOrchestrator = new sst.aws.Function("BuildOrchestrator", {
   handler: "packages/functions/build-orchestrator/index.handler",
   timeout: "60 seconds",
-  link: [deploymentsTable, artifactsBucket, buildQueue],
+  link: [deploymentsTable, projectsTable, artifactsBucket, buildQueue],
   environment: {
     CODEBUILD_PROJECT: codeBuildProject.name,
     ARTIFACTS_BUCKET: artifactsBucket.name,
     DEPLOYMENTS_TABLE: deploymentsTable.name,
+    PROJECTS_TABLE: projectsTable.name,
   },
 });
 
