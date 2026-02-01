@@ -77,11 +77,13 @@ Plans:
   5. User can view runtime logs, errors, and performance metrics
   6. User can view AWS cost breakdown per site
 
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
-- [ ] 03-01: TBD during phase planning
-- [ ] 03-02: TBD during phase planning
+- [ ] 03-01-PLAN.md — Dashboard Foundation + Auth (Next.js 15, Auth.js v5, shadcn/ui layout)
+- [ ] 03-02-PLAN.md — Sites List + Deployment History (TanStack Table, rollback UI)
+- [ ] 03-03-PLAN.md — Environment Variables + Custom Domains (Server Actions for mutations)
+- [ ] 03-04-PLAN.md — Observability (Logs, Metrics, Costs with CloudWatch + Cost Explorer)
 
 ## Progress
 
@@ -92,4 +94,4 @@ Phases execute in numeric order: 1 → 2 → 3
 |-------|----------------|--------|-----------|
 | 1. Infrastructure & Build | 4/4 | Complete | 2026-02-01 |
 | 2. Deployment & CDN | 3/3 | Complete | 2026-02-01 |
-| 3. Dashboard & Observability | 0/2 | Not started | - |
+| 3. Dashboard & Observability | 0/4 | Not started | - |
