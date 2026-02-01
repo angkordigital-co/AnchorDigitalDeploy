@@ -55,11 +55,12 @@ Plans:
   5. User can rollback to previous deployment instantly
   6. Deployments complete with zero downtime
 
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 02-01: TBD during phase planning
-- [ ] 02-02: TBD during phase planning
+- [ ] 02-01-PLAN.md — CloudFront + Lambda Deployment Infrastructure
+- [ ] 02-02-PLAN.md — Deploy Orchestrator + Build Integration
+- [ ] 02-03-PLAN.md — Rollback API + Custom Domains with ACM
 
 ### Phase 3: Dashboard & Observability
 **Goal**: Web dashboard provides full visibility and control over all deployed sites
@@ -90,5 +91,5 @@ Phases execute in numeric order: 1 → 2 → 3
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Infrastructure & Build | 4/4 | Complete | 2026-02-01 |
-| 2. Deployment & CDN | 0/2 | Ready to execute | - |
+| 2. Deployment & CDN | 0/3 | Ready to execute | - |
 | 3. Dashboard & Observability | 0/2 | Not started | - |
