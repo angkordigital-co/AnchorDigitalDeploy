@@ -11,29 +11,29 @@ See: .planning/PROJECT.md (updated 2026-02-01)
 ## Current Position
 
 Phase: 2 of 3 (Deployment & CDN) - In progress
-Plan: 2 of TBD in current phase
+Plan: 3 of TBD in current phase
 Status: Phase 2 in progress
-Last activity: 2026-02-01 - Completed 02-02-PLAN.md (Deployment Orchestration)
+Last activity: 2026-02-01 - Completed 02-03-PLAN.md (Rollback & Custom Domains)
 
-Progress: [████░░░░░░] 40% (2/3 phases, Plan 02-02 complete)
+Progress: [████░░░░░░] 47% (2/3 phases, Plan 02-03 complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 6
+- Total plans completed: 7
 - Average duration: 9 min
-- Total execution time: 0.93 hours
+- Total execution time: 1.05 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-infrastructure-build | 4/4 | 35 min | 9 min |
-| 02-deployment-cdn | 2/? | 21 min | 11 min |
+| 02-deployment-cdn | 3/? | 28 min | 9 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-03 (13 min), 01-04 (8 min), 02-01 (16 min), 02-02 (5 min)
-- Trend: Improving
+- Last 5 plans: 01-04 (8 min), 02-01 (16 min), 02-02 (5 min), 02-03 (7 min)
+- Trend: Stable at 9 min average
 
 *Updated after each plan completion*
 
@@ -68,6 +68,10 @@ Recent decisions affecting current work:
 - **Separate staticAssetsBucket:** Deployed assets in dedicated bucket, different lifecycle from build artifacts (02-02)
 - **Asynchronous deployment invocation:** CodeBuild triggers deploy-handler with Event type for faster build completion (02-02)
 - **'built' deployment status:** Separates build completion from deployment start for clearer status tracking (02-02)
+- **Lambda alias switching for rollback:** Instant (<1s) rollback by updating alias, no code re-upload needed (02-03)
+- **ACM certificates in us-east-1:** CloudFront requires certificates in us-east-1 region (02-03)
+- **Automatic CloudFront update on cert validation:** GET domain endpoint triggers distribution update when certificate becomes ISSUED (02-03)
+- **CloudFrontStatus separate from certificateStatus:** Certificate can be ISSUED but CloudFront update failed, enables retry logic (02-03)
 
 ### Pending Todos
 
@@ -96,6 +100,7 @@ None.
 |----------|------|--------|
 | DynamoDB | anchor-deploy-dev-ProjectsTable-cwdhxuwt | ap-southeast-1 |
 | DynamoDB | anchor-deploy-dev-DeploymentsTable-sdhkosws | ap-southeast-1 |
+| DynamoDB | anchor-deploy-dev-DomainsTable-* | ap-southeast-1 |
 | S3 | anchor-deploy-dev-artifactsbucket-vowmncbh | ap-southeast-1 |
 | S3 | anchor-deploy-dev-logsbucket-wacxnrhx | ap-southeast-1 |
 | API Gateway | WebhookApi | https://ksha1s4pnc.execute-api.ap-southeast-1.amazonaws.com |
@@ -104,6 +109,8 @@ None.
 | Lambda | BuildOrchestrator | anchor-deploy-dev-BuildOrchestratorFunction-bdwwezte |
 | Lambda | EnvVarsHandler | anchor-deploy-dev-EnvVarsHandlerFunction-* |
 | Lambda | LogsHandler | anchor-deploy-dev-LogsHandlerFunction-* |
+| Lambda | RollbackHandler | anchor-deploy-dev-RollbackHandlerFunction-* |
+| Lambda | DomainsHandler | anchor-deploy-dev-DomainsHandlerFunction-* |
 | Lambda | ServerFunction (SSR) | anchor-deploy-dev-ServerFunctionFunction-bcdnwtma |
 | Lambda | ImageFunction (optimization) | anchor-deploy-dev-ImageFunctionFunction-ewvzazcs |
 | Lambda | DeployHandler | anchor-deploy-dev-DeployHandlerFunction-* |
@@ -125,21 +132,27 @@ None.
 | GET | /projects/{projectId}/env | EnvVarsHandler | Get project env vars |
 | PUT | /projects/{projectId}/env | EnvVarsHandler | Update project env vars |
 | GET | /deployments/{deploymentId}/logs | LogsHandler | Get build logs from CloudWatch |
+| POST | /projects/{projectId}/rollback | RollbackHandler | Instant rollback to previous deployment |
+| GET | /projects/{projectId}/domains | DomainsHandler | List custom domains for project |
+| POST | /projects/{projectId}/domains | DomainsHandler | Add custom domain with ACM certificate |
+| GET | /projects/{projectId}/domains/{domainId} | DomainsHandler | Get domain status + trigger CloudFront update |
+| DELETE | /projects/{projectId}/domains/{domainId} | DomainsHandler | Remove custom domain |
 
 ## Session Continuity
 
-Last session: 2026-02-01 14:27 UTC
-Stopped at: Completed Phase 2 Plan 02 (02-02-PLAN.md - Deployment Orchestration)
+Last session: 2026-02-01 14:40 UTC
+Stopped at: Completed Phase 2 Plan 03 (02-03-PLAN.md - Rollback & Custom Domains)
 Resume file: None
 
-## Phase 2 Plan 02 Complete - Summary
+## Phase 2 Plan 03 Complete - Summary
 
-Deployment orchestration with zero-downtime complete:
-- Deploy handler Lambda processes artifacts and updates Lambda functions
-- Lambda alias-based routing ('live' alias) for atomic traffic shifts
-- Static assets uploaded to dedicated S3 bucket with cache headers
-- CodeBuild automatically triggers deployment after build success
-- Deployment records track Lambda version ARNs for rollback
-- Full flow: Webhook → Build → Deploy → Live (zero-downtime)
+Rollback and custom domain management complete:
+- Rollback API enables instant (<1s) reversion using Lambda alias switching
+- Custom domain API provisions ACM certificates in us-east-1
+- DNS validation instructions returned to users
+- CloudFront distribution automatically updated when certificates validate
+- Domain status tracking with separate certificate and CloudFront states
+- Zero-downtime rollback without code re-upload
+- Full domain flow: Add domain → DNS validation → ACM cert issued → CloudFront updated → active
 
-Ready for Plan 03: Custom domain support (ACM certificates, Route53, domain mapping)
+Ready for: Phase 3 dashboard with rollback UI and domain management interface
