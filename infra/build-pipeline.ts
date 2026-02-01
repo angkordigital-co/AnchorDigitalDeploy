@@ -292,6 +292,30 @@ const orchestratorCodeBuildPolicy = new aws.iam.RolePolicy(
 );
 
 /**
+ * Grant SQS consumer permissions to orchestrator
+ *
+ * EventSourceMapping requires these permissions on the Lambda role.
+ * SST's `link` only grants publish (SendMessage) permissions.
+ */
+const orchestratorSqsPolicy = new aws.iam.RolePolicy("OrchestratorSqsPolicy", {
+  role: buildOrchestrator.nodes.role.name,
+  policy: $util.jsonStringify({
+    Version: "2012-10-17",
+    Statement: [
+      {
+        Effect: "Allow",
+        Action: [
+          "sqs:ReceiveMessage",
+          "sqs:DeleteMessage",
+          "sqs:GetQueueAttributes",
+        ],
+        Resource: [buildQueue.arn],
+      },
+    ],
+  }),
+});
+
+/**
  * Subscribe orchestrator to build queue
  *
  * Instead of subscribing a separate function, we use the EventSourceMapping
@@ -307,5 +331,8 @@ const buildQueueEventSource = new aws.lambda.EventSourceMapping(
     functionName: buildOrchestrator.nodes.function.name,
     batchSize: 1,
     enabled: true,
+  },
+  {
+    dependsOn: [orchestratorSqsPolicy],
   }
 );
