@@ -113,37 +113,37 @@ Which phases cover which requirements. Updated during roadmap creation.
 | INFRA-03 | Phase 1 | Pending |
 | INFRA-04 | Phase 1 | Pending |
 | INFRA-05 | Phase 1 | Pending |
-| GIT-01 | Phase 2 | Pending |
-| GIT-02 | Phase 2 | Pending |
-| GIT-03 | Phase 2 | Pending |
-| GIT-04 | Phase 2 | Pending |
-| BUILD-01 | Phase 2 | Pending |
-| BUILD-02 | Phase 2 | Pending |
-| BUILD-03 | Phase 2 | Pending |
-| BUILD-04 | Phase 2 | Pending |
-| BUILD-05 | Phase 2 | Pending |
-| DEPLOY-01 | Phase 3 | Pending |
-| DEPLOY-02 | Phase 3 | Pending |
-| DEPLOY-03 | Phase 3 | Pending |
-| DEPLOY-04 | Phase 3 | Pending |
-| DEPLOY-05 | Phase 3 | Pending |
-| DEPLOY-06 | Phase 3 | Pending |
-| DOMAIN-01 | Phase 4 | Pending |
-| DOMAIN-02 | Phase 4 | Pending |
-| DOMAIN-03 | Phase 4 | Pending |
-| DOMAIN-04 | Phase 4 | Pending |
-| OBS-01 | Phase 5 | Pending |
-| OBS-02 | Phase 5 | Pending |
-| OBS-03 | Phase 5 | Pending |
-| OBS-04 | Phase 5 | Pending |
-| OBS-05 | Phase 5 | Pending |
-| DASH-01 | Phase 6 | Pending |
-| DASH-02 | Phase 6 | Pending |
-| DASH-03 | Phase 6 | Pending |
-| DASH-04 | Phase 6 | Pending |
-| DASH-05 | Phase 6 | Pending |
-| DASH-06 | Phase 6 | Pending |
-| DASH-07 | Phase 6 | Pending |
+| GIT-01 | Phase 1 | Pending |
+| GIT-02 | Phase 1 | Pending |
+| GIT-03 | Phase 1 | Pending |
+| GIT-04 | Phase 1 | Pending |
+| BUILD-01 | Phase 1 | Pending |
+| BUILD-02 | Phase 1 | Pending |
+| BUILD-03 | Phase 1 | Pending |
+| BUILD-04 | Phase 1 | Pending |
+| BUILD-05 | Phase 1 | Pending |
+| DEPLOY-01 | Phase 2 | Pending |
+| DEPLOY-02 | Phase 2 | Pending |
+| DEPLOY-03 | Phase 2 | Pending |
+| DEPLOY-04 | Phase 2 | Pending |
+| DEPLOY-05 | Phase 2 | Pending |
+| DEPLOY-06 | Phase 2 | Pending |
+| DOMAIN-01 | Phase 2 | Pending |
+| DOMAIN-02 | Phase 2 | Pending |
+| DOMAIN-03 | Phase 2 | Pending |
+| DOMAIN-04 | Phase 2 | Pending |
+| OBS-01 | Phase 3 | Pending |
+| OBS-02 | Phase 3 | Pending |
+| OBS-03 | Phase 3 | Pending |
+| OBS-04 | Phase 3 | Pending |
+| OBS-05 | Phase 3 | Pending |
+| DASH-01 | Phase 3 | Pending |
+| DASH-02 | Phase 3 | Pending |
+| DASH-03 | Phase 3 | Pending |
+| DASH-04 | Phase 3 | Pending |
+| DASH-05 | Phase 3 | Pending |
+| DASH-06 | Phase 3 | Pending |
+| DASH-07 | Phase 3 | Pending |
 
 **Coverage:**
 - v1 requirements: 37 total
@@ -152,4 +152,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-02-01*
-*Last updated: 2026-02-01 after initial definition*
+*Last updated: 2026-02-01 after roadmap creation with 3-phase quick depth structure*
