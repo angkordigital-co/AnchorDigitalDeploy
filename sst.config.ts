@@ -22,10 +22,11 @@ export default $config({
   },
   async run() {
     // Import infrastructure modules
-    // Order matters: database and storage first, then build-pipeline, then webhooks
+    // Order matters: database and storage first, then deployment (uses storage), then build-pipeline, then webhooks
     // (webhooks imports buildQueue from build-pipeline)
     const { projectsTable, deploymentsTable } = await import("./infra/database.js");
     const { artifactsBucket, logsBucket } = await import("./infra/storage.js");
+    const { distribution, serverFunction, imageFunction } = await import("./infra/deployment.js");
     const { buildQueue, codeBuildProject, buildOrchestrator } = await import("./infra/build-pipeline.js");
     const { webhookApi, webhookSecret } = await import("./infra/webhooks.js");
 
@@ -38,6 +39,13 @@ export default $config({
       webhookUrl: webhookApi.url,
       buildQueueUrl: buildQueue.url,
       codeBuildProject: codeBuildProject.name,
+      // CloudFront distribution for serving deployed apps
+      cloudfrontUrl: distribution.domainName,
+      cloudfrontDistributionId: distribution.id,
+      serverFunctionName: serverFunction.name,
+      serverFunctionUrl: serverFunction.url,
+      imageFunctionName: imageFunction.name,
+      staticAssetsBucket: artifactsBucket.name, // Reusing artifacts bucket for static assets
     };
   },
 });

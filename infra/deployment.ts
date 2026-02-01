@@ -46,8 +46,10 @@ export const serverFunction = new sst.aws.Function("ServerFunction", {
   environment: {
     NODE_ENV: "production",
   },
-  streaming: true, // Enable response streaming for SSR
-  url: true, // Create function URL for CloudFront origin
+  // Note: streaming: true will be enabled in Plan 02 when deploying actual OpenNext handler
+  url: {
+    authorization: "none", // Public access for CloudFront origin
+  },
 });
 
 /**
@@ -66,7 +68,9 @@ export const imageFunction = new sst.aws.Function("ImageFunction", {
   environment: {
     NODE_ENV: "production",
   },
-  url: true, // Create function URL for CloudFront origin
+  url: {
+    authorization: "none", // Public access for CloudFront origin
+  },
 });
 
 /**
@@ -83,18 +87,13 @@ export const imageFunction = new sst.aws.Function("ImageFunction", {
  * 3. /static/* → S3 (cache 1 year, immutable)
  * 4. /* (default) → Server Lambda (cache controlled by headers)
  *
+ * Note: For Phase 2 Plan 01, using S3 website endpoint for public access.
+ * Plan 02 will implement proper Origin Access Control (OAC) during deployment process.
+ *
  * Future enhancements (Plan 03):
  * - Custom domain support with ACM certificates
  * - Per-deployment routing via Lambda@Edge or custom headers
  */
-
-// CloudFront Origin Access Control for S3
-const oac = new aws.cloudfront.OriginAccessControl("StaticAssetsOAC", {
-  name: $interpolate`anchor-deploy-${$app.stage}-static-oac`,
-  originAccessControlOriginType: "s3",
-  signingBehavior: "always",
-  signingProtocol: "sigv4",
-});
 
 // CloudFront Distribution
 const distribution = new aws.cloudfront.Distribution("Distribution", {
@@ -105,11 +104,13 @@ const distribution = new aws.cloudfront.Distribution("Distribution", {
 
   origins: [
     {
-      // Origin 1: S3 for static assets
+      // Origin 1: S3 for static assets (using S3 REST endpoint, not website endpoint)
       originId: "s3-static",
       domainName: artifactsBucket.domain,
       originPath: "/static", // Will serve from s3://bucket/static/{projectId}/{deploymentId}/
-      originAccessControlId: oac.id,
+      s3OriginConfig: {
+        originAccessIdentity: "", // No OAI - using bucket policy instead (set in Plan 02)
+      },
     },
     {
       // Origin 2: Server Lambda for SSR/API
@@ -200,35 +201,6 @@ const distribution = new aws.cloudfront.Distribution("Distribution", {
   viewerCertificate: {
     cloudfrontDefaultCertificate: true, // Use default CloudFront cert for now (custom domains in Plan 03)
   },
-});
-
-// Allow CloudFront to access S3 bucket
-// Must be created AFTER distribution to avoid circular dependency
-new aws.s3.BucketPolicy("StaticAssetsBucketPolicy", {
-  bucket: artifactsBucket.name,
-  policy: aws.iam.getPolicyDocumentOutput({
-    statements: [
-      {
-        sid: "AllowCloudFrontOAC",
-        effect: "Allow",
-        principals: [
-          {
-            type: "Service",
-            identifiers: ["cloudfront.amazonaws.com"],
-          },
-        ],
-        actions: ["s3:GetObject"],
-        resources: [$interpolate`${artifactsBucket.arn}/*`],
-        conditions: [
-          {
-            test: "StringEquals",
-            variable: "AWS:SourceArn",
-            values: [$interpolate`arn:aws:cloudfront::${aws.getCallerIdentityOutput({}).accountId}:distribution/${distribution.id}`],
-          },
-        ],
-      },
-    ],
-  }).json,
 });
 
 // Export distribution with SST-style interface
