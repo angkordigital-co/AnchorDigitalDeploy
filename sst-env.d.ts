@@ -22,6 +22,10 @@ declare module "sst" {
       "type": "sst.aws.Queue"
       "url": string
     }
+    "DeployHandler": {
+      "name": string
+      "type": "sst.aws.Function"
+    }
     "Deployments": {
       "name": string
       "type": "sst.aws.Dynamo"
@@ -29,6 +33,14 @@ declare module "sst" {
     "DeploymentsHandler": {
       "name": string
       "type": "sst.aws.Function"
+    }
+    "DomainsHandler": {
+      "name": string
+      "type": "sst.aws.Function"
+    }
+    "DomainsTable": {
+      "name": string
+      "type": "sst.aws.Dynamo"
     }
     "EnvVarsHandler": {
       "name": string
@@ -51,10 +63,22 @@ declare module "sst" {
       "name": string
       "type": "sst.aws.Dynamo"
     }
+    "RollbackHandler": {
+      "name": string
+      "type": "sst.aws.Function"
+    }
     "ServerFunction": {
       "name": string
       "type": "sst.aws.Function"
       "url": string
+    }
+    "StaticAssets": {
+      "name": string
+      "type": "sst.aws.Bucket"
+    }
+    "UsersTable": {
+      "name": string
+      "type": "sst.aws.Dynamo"
     }
     "WEBHOOK_SECRET": {
       "type": "sst.sst.Secret"

@@ -65,6 +65,7 @@ interface LambdaEvent {
  * Update deployment status in DynamoDB
  */
 async function updateDeploymentStatus(
+  projectId: string,
   deploymentId: string,
   status: "deploying" | "success" | "failed",
   error?: string
@@ -97,6 +98,7 @@ async function updateDeploymentStatus(
     new UpdateItemCommand({
       TableName: process.env.DEPLOYMENTS_TABLE!,
       Key: {
+        projectId: { S: projectId },
         deploymentId: { S: deploymentId },
       },
       UpdateExpression: updateExpression,
@@ -112,6 +114,7 @@ async function updateDeploymentStatus(
  * Update deployment record with Lambda version info
  */
 async function setDeploymentVersion(
+  projectId: string,
   deploymentId: string,
   data: {
     lambdaServerVersionArn: string;
@@ -127,6 +130,7 @@ async function setDeploymentVersion(
     new UpdateItemCommand({
       TableName: process.env.DEPLOYMENTS_TABLE!,
       Key: {
+        projectId: { S: projectId },
         deploymentId: { S: deploymentId },
       },
       UpdateExpression:
@@ -334,7 +338,7 @@ export async function handler(event: LambdaEvent): Promise<void> {
 
   try {
     // Update status to deploying
-    await updateDeploymentStatus(event.deploymentId, "deploying");
+    await updateDeploymentStatus(event.projectId, event.deploymentId, "deploying");
 
     // Parse artifact path
     const artifactsBucket = process.env.ARTIFACTS_BUCKET!;
@@ -367,7 +371,7 @@ export async function handler(event: LambdaEvent): Promise<void> {
     );
 
     // Step 4: Update deployment record with version info
-    await setDeploymentVersion(event.deploymentId, {
+    await setDeploymentVersion(event.projectId, event.deploymentId, {
       lambdaServerVersionArn: serverDeployment.versionArn,
       lambdaImageVersionArn: imageDeployment.versionArn,
       lambdaServerAliasArn: serverDeployment.aliasArn,
@@ -378,7 +382,7 @@ export async function handler(event: LambdaEvent): Promise<void> {
     });
 
     // Step 5: Update deployment status to success
-    await updateDeploymentStatus(event.deploymentId, "success");
+    await updateDeploymentStatus(event.projectId, event.deploymentId, "success");
 
     console.log(`[DEPLOY] Deployment complete`, {
       deploymentId: event.deploymentId,
@@ -393,6 +397,7 @@ export async function handler(event: LambdaEvent): Promise<void> {
     });
 
     await updateDeploymentStatus(
+      event.projectId,
       event.deploymentId,
       "failed",
       error instanceof Error ? error.message : String(error)

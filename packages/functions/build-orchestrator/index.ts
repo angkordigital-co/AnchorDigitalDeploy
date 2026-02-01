@@ -57,11 +57,13 @@ interface SQSEvent {
 /**
  * Update deployment status in DynamoDB
  *
- * @param deploymentId - Deployment record ID
+ * @param projectId - Project ID (partition key)
+ * @param deploymentId - Deployment record ID (sort key)
  * @param status - New status (building, failed)
  * @param buildId - Optional CodeBuild build ID
  */
 async function updateDeploymentStatus(
+  projectId: string,
   deploymentId: string,
   status: "building" | "failed",
   buildId?: string
@@ -88,6 +90,7 @@ async function updateDeploymentStatus(
     new UpdateItemCommand({
       TableName: process.env.DEPLOYMENTS_TABLE!,
       Key: {
+        projectId: { S: projectId },
         deploymentId: { S: deploymentId },
       },
       UpdateExpression: updateExpression,
@@ -234,13 +237,13 @@ async function processBuildJob(job: BuildJobMessage): Promise<void> {
   try {
     // Step 1: Update status to "building"
     // We do this BEFORE starting CodeBuild so user sees progress immediately
-    await updateDeploymentStatus(job.deploymentId, "building");
+    await updateDeploymentStatus(job.projectId, job.deploymentId, "building");
 
     // Step 2: Start CodeBuild
     const buildId = await startCodeBuild(job);
 
     // Step 3: Store buildId in deployment record (for log streaming)
-    await updateDeploymentStatus(job.deploymentId, "building", buildId);
+    await updateDeploymentStatus(job.projectId, job.deploymentId, "building", buildId);
 
     console.log(`[COMPLETE] Build job processed successfully`, {
       deploymentId: job.deploymentId,
@@ -253,7 +256,7 @@ async function processBuildJob(job: BuildJobMessage): Promise<void> {
     });
 
     // Update deployment status to failed
-    await updateDeploymentStatus(job.deploymentId, "failed");
+    await updateDeploymentStatus(job.projectId, job.deploymentId, "failed");
 
     // Re-throw to let SQS retry (message goes back to queue)
     throw error;
