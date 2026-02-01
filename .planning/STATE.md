@@ -6,33 +6,33 @@ See: .planning/PROJECT.md (updated 2026-02-01)
 
 **Core value:** When a developer pushes to main, the Next.js site is automatically built and deployed to production with zero manual intervention.
 
-**Current focus:** Phase 1 - Infrastructure & Build
+**Current focus:** Phase 1 - Infrastructure & Build - COMPLETE
 
 ## Current Position
 
-Phase: 1 of 3 (Infrastructure & Build)
-Plan: 3 of 4 in current phase
-Status: In progress
-Last activity: 2026-02-01 - Completed 01-03-PLAN.md (Build Pipeline)
+Phase: 1 of 3 (Infrastructure & Build) - COMPLETE
+Plan: 4 of 4 in current phase
+Status: Phase Complete - Ready for Phase 2
+Last activity: 2026-02-01 - Completed 01-04-PLAN.md (Environment Variables & Log Streaming)
 
-Progress: [███░░░░░░░] 30%
+Progress: [████░░░░░░] 40%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 3
+- Total plans completed: 4
 - Average duration: 9 min
-- Total execution time: 0.45 hours
+- Total execution time: 0.58 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01-infrastructure-build | 3/4 | 27 min | 9 min |
+| 01-infrastructure-build | 4/4 | 35 min | 9 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (8 min), 01-02 (6 min), 01-03 (13 min)
-- Trend: Stable (01-03 larger scope with CodeBuild)
+- Last 5 plans: 01-01 (8 min), 01-02 (6 min), 01-03 (13 min), 01-04 (8 min)
+- Trend: Stable
 
 *Updated after each plan completion*
 
@@ -57,6 +57,9 @@ Recent decisions affecting current work:
 - **BUILD_GENERAL1_SMALL compute:** 3GB RAM needed for Next.js builds; nano causes OOM (01-03)
 - **Embedded buildspec:** Inline in CodeBuild project for atomic deployment (01-03)
 - **DLQ after 3 retries:** Balance recovery attempts vs investigation delay (01-03)
+- **Structured EnvVar schema with isSecret flag:** Prepares for Secrets Manager migration in Phase 2 (01-04)
+- **x-user-id header for Phase 1 auth:** Placeholder until dashboard auth in Phase 3 (01-04)
+- **Polling-based logs:** Phase 1 uses REST polling; Phase 3 adds WebSocket/SSE (01-04)
 
 ### Pending Todos
 
@@ -88,13 +91,36 @@ None.
 | Lambda | WebhookHandler | anchor-deploy-dev-WebhookHandlerFunction-svfhrrck |
 | Lambda | DeploymentsHandler | anchor-deploy-dev-DeploymentsHandlerFunction-mdatkxca |
 | Lambda | BuildOrchestrator | anchor-deploy-dev-BuildOrchestratorFunction-bdwwezte |
+| Lambda | EnvVarsHandler | anchor-deploy-dev-EnvVarsHandlerFunction-* |
+| Lambda | LogsHandler | anchor-deploy-dev-LogsHandlerFunction-* |
 | SQS | BuildQueue | anchor-deploy-dev-BuildQueueQueue-wwzrzbfu |
 | SQS | BuildQueueDLQ | anchor-deploy-dev-BuildQueueDLQQueue-twxkcxct |
 | CodeBuild | NextjsBuild | anchor-deploy-nextjs-build |
 | Secret | WEBHOOK_SECRET | SST managed |
 
+## API Endpoints
+
+| Method | Path | Handler | Purpose |
+|--------|------|---------|---------|
+| POST | /webhook/{projectId} | WebhookHandler | GitHub push webhook receiver |
+| GET | /projects/{projectId}/deployments | DeploymentsHandler | List deployment history |
+| GET | /projects/{projectId}/env | EnvVarsHandler | Get project env vars |
+| PUT | /projects/{projectId}/env | EnvVarsHandler | Update project env vars |
+| GET | /deployments/{deploymentId}/logs | LogsHandler | Get build logs from CloudWatch |
+
 ## Session Continuity
 
-Last session: 2026-02-01 05:26 UTC
-Stopped at: Completed 01-03-PLAN.md, ready for 01-04 (Log Streaming)
+Last session: 2026-02-01 05:37 UTC
+Stopped at: Completed Phase 1 (01-04-PLAN.md)
 Resume file: None
+
+## Phase 1 Complete - Summary
+
+Phase 1 infrastructure fully deployed:
+- GitHub webhook to SQS to CodeBuild pipeline
+- OpenNext packaging for Next.js apps
+- Environment variables injection into builds
+- Build logs streaming from CloudWatch
+- All API endpoints tested and working
+
+Ready for Phase 2: Domain & Serving (CloudFront, Lambda@Edge, custom domains)
