@@ -6,33 +6,34 @@ See: .planning/PROJECT.md (updated 2026-02-01)
 
 **Core value:** When a developer pushes to main, the Next.js site is automatically built and deployed to production with zero manual intervention.
 
-**Current focus:** Phase 3 - Dashboard & Observability - Ready to plan
+**Current focus:** Phase 3 - Dashboard & Observability - In progress
 
 ## Current Position
 
-Phase: 3 of 3 (Dashboard & Observability) - Ready to execute
-Plan: 0 of 4 in current phase
-Status: Phase 3 planning complete, ready for execution
-Last activity: 2026-02-01 - Planned Phase 3 (Dashboard & Observability)
+Phase: 3 of 3 (Dashboard & Observability) - In progress
+Plan: 1 of 4 in current phase
+Status: Plan 03-01 complete, continuing to Plan 03-02
+Last activity: 2026-02-01 - Completed 03-01-PLAN.md (Dashboard Foundation & Auth)
 
-Progress: [██████░░░░] 67% (2/3 phases complete)
+Progress: [███████░░░] 73% (8/11 plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 7
+- Total plans completed: 8
 - Average duration: 9 min
-- Total execution time: 1.05 hours
+- Total execution time: 1.15 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-infrastructure-build | 4/4 | 35 min | 9 min |
-| 02-deployment-cdn | 3/? | 28 min | 9 min |
+| 02-deployment-cdn | 3/3 | 28 min | 9 min |
+| 03-dashboard-observability | 1/4 | 6 min | 6 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-04 (8 min), 02-01 (16 min), 02-02 (5 min), 02-03 (7 min)
+- Last 5 plans: 02-01 (16 min), 02-02 (5 min), 02-03 (7 min), 03-01 (6 min)
 - Trend: Stable at 9 min average
 
 *Updated after each plan completion*
@@ -72,6 +73,10 @@ Recent decisions affecting current work:
 - **ACM certificates in us-east-1:** CloudFront requires certificates in us-east-1 region (02-03)
 - **Automatic CloudFront update on cert validation:** GET domain endpoint triggers distribution update when certificate becomes ISSUED (02-03)
 - **CloudFrontStatus separate from certificateStatus:** Certificate can be ISSUED but CloudFront update failed, enables retry logic (02-03)
+- **Next.js 16 for dashboard:** create-next-app@latest installed v16; compatible with plan requirements (03-01)
+- **JWT session strategy for Auth.js:** Serverless-friendly, no server-side session storage needed (03-01)
+- **Route groups for layout separation:** (auth) and (dashboard) groups separate layouts without URL segments (03-01)
+- **Suspense boundary for useSearchParams:** Required for static generation in Next.js 16 (03-01)
 
 ### Pending Todos
 
@@ -98,6 +103,7 @@ None.
 
 | Resource | Name | Region |
 |----------|------|--------|
+| DynamoDB | anchor-deploy-dev-UsersTable-* | ap-southeast-1 |
 | DynamoDB | anchor-deploy-dev-ProjectsTable-cwdhxuwt | ap-southeast-1 |
 | DynamoDB | anchor-deploy-dev-DeploymentsTable-sdhkosws | ap-southeast-1 |
 | DynamoDB | anchor-deploy-dev-DomainsTable-* | ap-southeast-1 |
@@ -140,22 +146,20 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-02-01 14:40 UTC
-Stopped at: Completed Phase 2 Plan 03 (02-03-PLAN.md - Rollback & Custom Domains)
+Last session: 2026-02-01 15:29 UTC
+Stopped at: Completed Plan 03-01 (Dashboard Foundation & Auth)
 Resume file: None
 
-## Phase 2 Complete - Summary
+## Phase 3 In Progress - Summary
 
-**Phase 2: Deployment & CDN** verified and complete:
-- CloudFront distribution with Lambda origins for SSR/API and S3 for static assets
-- Deploy handler orchestrates artifact processing with zero-downtime alias updates
-- Lambda versions published for immutable deployments
-- Rollback API enables instant (<1s) reversion using Lambda alias switching
-- Custom domain API provisions ACM certificates in us-east-1
-- DNS validation instructions returned to users
-- CloudFront distribution automatically updated when certificates validate
-- Full flow: GitHub push → Build → Deploy → Live (zero-downtime)
+**Phase 3 Plan 01: Dashboard Foundation & Auth** complete:
+- Next.js 16 dashboard application with shadcn/ui component library
+- Auth.js v5 with DynamoDB credentials provider (UsersTable + EmailIndex GSI)
+- Route protection middleware redirects unauthenticated users to /login
+- Login page with email/password form using react-hook-form + zod
+- Dashboard layout with sidebar navigation (Sites, Settings) and header (user info, sign out)
+- Route groups: (auth) for login, (dashboard) for protected pages
 
-**Phase 2 Verification:** 6/6 must-haves confirmed in codebase.
+**Plan 03-01 Verification:** 3/3 tasks complete, all must_haves verified.
 
-Ready for Phase 3: Dashboard & Observability (web UI, logs, metrics, cost breakdown)
+Ready for Plan 03-02: Sites CRUD API (list/create/edit projects from dashboard)
