@@ -32,12 +32,13 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. Build artifacts stored in S3 with metadata in DynamoDB
   5. Environment variables can be configured and used during builds
 
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
-- [ ] 01-01: TBD during phase planning
-- [ ] 01-02: TBD during phase planning
-- [ ] 01-03: TBD during phase planning
+- [ ] 01-01-PLAN.md — SST Infrastructure Foundation (DynamoDB + S3 with lifecycle policies)
+- [ ] 01-02-PLAN.md — GitHub Webhook Integration (API Gateway + signature validation)
+- [ ] 01-03-PLAN.md — Build Pipeline (CodeBuild + SQS orchestration with OpenNext)
+- [ ] 01-04-PLAN.md — Environment Variables & Build Logs (configuration + CloudWatch)
 
 ### Phase 2: Deployment & CDN
 **Goal**: Next.js sites deploy to Lambda with custom domains and automatic SSL
@@ -88,6 +89,6 @@ Phases execute in numeric order: 1 → 2 → 3
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Infrastructure & Build | 0/3 | Not started | - |
+| 1. Infrastructure & Build | 0/4 | Ready to execute | - |
 | 2. Deployment & CDN | 0/2 | Not started | - |
 | 3. Dashboard & Observability | 0/2 | Not started | - |
