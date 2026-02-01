@@ -4,10 +4,13 @@
  * Provides endpoints for:
  * - POST /webhook/{projectId}: GitHub webhook receiver
  * - GET /projects/{projectId}/deployments: Deployment history
+ * - GET /projects/{projectId}/env: Get project environment variables
+ * - PUT /projects/{projectId}/env: Update project environment variables
+ * - GET /deployments/{deploymentId}/logs: Get build logs from CloudWatch
  *
  * Security:
  * - Webhook endpoint validates GitHub HMAC signatures
- * - Deployment list endpoint requires authentication (userId header)
+ * - Other endpoints require authentication (userId header for Phase 1)
  *
  * Async pattern:
  * - Webhook handler returns 202 immediately
@@ -72,6 +75,25 @@ const deploymentsHandler = new sst.aws.Function("DeploymentsHandler", {
   },
 });
 
+/**
+ * Environment Variables Handler Function
+ *
+ * Manages project environment variables:
+ * - GET: Retrieve current env vars
+ * - PUT: Update env vars (replaces all)
+ *
+ * Environment variables are injected into CodeBuild during builds.
+ * Supports NEXT_PUBLIC_*, API_URL, and other build-time variables.
+ */
+const envVarsHandler = new sst.aws.Function("EnvVarsHandler", {
+  handler: "packages/functions/env-vars-handler/index.handler",
+  timeout: "30 seconds",
+  link: [projectsTable],
+  environment: {
+    PROJECTS_TABLE: projectsTable.name,
+  },
+});
+
 // Route: POST /webhook/{projectId}
 // GitHub sends push events here
 webhookApi.route("POST /webhook/{projectId}", webhookHandler.arn);
@@ -79,5 +101,13 @@ webhookApi.route("POST /webhook/{projectId}", webhookHandler.arn);
 // Route: GET /projects/{projectId}/deployments
 // Dashboard queries deployment history
 webhookApi.route("GET /projects/{projectId}/deployments", deploymentsHandler.arn);
+
+// Route: GET /projects/{projectId}/env
+// Get project environment variables
+webhookApi.route("GET /projects/{projectId}/env", envVarsHandler.arn);
+
+// Route: PUT /projects/{projectId}/env
+// Update project environment variables
+webhookApi.route("PUT /projects/{projectId}/env", envVarsHandler.arn);
 
 export { webhookSecret };
