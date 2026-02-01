@@ -11,28 +11,28 @@ See: .planning/PROJECT.md (updated 2026-02-01)
 ## Current Position
 
 Phase: 1 of 3 (Infrastructure & Build)
-Plan: 2 of 4 in current phase
+Plan: 3 of 4 in current phase
 Status: In progress
-Last activity: 2026-02-01 - Completed 01-02-PLAN.md (Webhook Handler)
+Last activity: 2026-02-01 - Completed 01-03-PLAN.md (Build Pipeline)
 
-Progress: [██░░░░░░░░] 20%
+Progress: [███░░░░░░░] 30%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 2
-- Average duration: 7 min
-- Total execution time: 0.23 hours
+- Total plans completed: 3
+- Average duration: 9 min
+- Total execution time: 0.45 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01-infrastructure-build | 2/4 | 14 min | 7 min |
+| 01-infrastructure-build | 3/4 | 27 min | 9 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (8 min), 01-02 (6 min)
-- Trend: Improving
+- Last 5 plans: 01-01 (8 min), 01-02 (6 min), 01-03 (13 min)
+- Trend: Stable (01-03 larger scope with CodeBuild)
 
 *Updated after each plan completion*
 
@@ -53,6 +53,10 @@ Recent decisions affecting current work:
 - **Async 202 response pattern:** Webhook returns immediately, build processing via SQS (01-02)
 - **timingSafeEqual for HMAC validation:** Prevents timing attacks on signature comparison (01-02)
 - **Branch filter on main only:** Only process refs/heads/main pushes (01-02)
+- **SQS visibility timeout 1800s:** Matches CodeBuild 30-minute timeout to prevent duplicate builds (01-03)
+- **BUILD_GENERAL1_SMALL compute:** 3GB RAM needed for Next.js builds; nano causes OOM (01-03)
+- **Embedded buildspec:** Inline in CodeBuild project for atomic deployment (01-03)
+- **DLQ after 3 retries:** Balance recovery attempts vs investigation delay (01-03)
 
 ### Pending Todos
 
@@ -62,7 +66,7 @@ None.
 
 **Phase 1 - Architecture Decisions Required:**
 - ~~Multi-tenant data isolation model~~ RESOLVED: Row-level security with userId GSI
-- Lambda packaging strategy (Container Images vs Layers) affects build pipeline design
+- ~~Lambda packaging strategy~~ RESOLVED: OpenNext packaging to Lambda zip uploaded to S3
 - ~~Database connection pooling strategy~~ NOT NEEDED: Using DynamoDB, no connection pooling required
 
 **Phase 2 - Research Needed:**
@@ -83,10 +87,14 @@ None.
 | API Gateway | WebhookApi | https://ksha1s4pnc.execute-api.ap-southeast-1.amazonaws.com |
 | Lambda | WebhookHandler | anchor-deploy-dev-WebhookHandlerFunction-svfhrrck |
 | Lambda | DeploymentsHandler | anchor-deploy-dev-DeploymentsHandlerFunction-mdatkxca |
+| Lambda | BuildOrchestrator | anchor-deploy-dev-BuildOrchestratorFunction-bdwwezte |
+| SQS | BuildQueue | anchor-deploy-dev-BuildQueueQueue-wwzrzbfu |
+| SQS | BuildQueueDLQ | anchor-deploy-dev-BuildQueueDLQQueue-twxkcxct |
+| CodeBuild | NextjsBuild | anchor-deploy-nextjs-build |
 | Secret | WEBHOOK_SECRET | SST managed |
 
 ## Session Continuity
 
-Last session: 2026-02-01 05:10 UTC
-Stopped at: Completed 01-02-PLAN.md, ready for 01-03 (Build Pipeline)
+Last session: 2026-02-01 05:26 UTC
+Stopped at: Completed 01-03-PLAN.md, ready for 01-04 (Log Streaming)
 Resume file: None
