@@ -7,16 +7,18 @@ A comprehensive guide to using Anchor Deploy, the self-hosted serverless deploym
 ## Table of Contents
 
 1. [Overview](#overview)
-2. [Getting Started](#getting-started)
-3. [Authentication](#authentication)
-4. [Managing Sites](#managing-sites)
-5. [Deployments](#deployments)
-6. [Environment Variables](#environment-variables)
-7. [Custom Domains](#custom-domains)
-8. [Logs](#logs)
-9. [Metrics](#metrics)
-10. [Costs](#costs)
-11. [Troubleshooting](#troubleshooting)
+2. [Installation & Setup](#installation--setup)
+3. [Configuration](#configuration)
+4. [Getting Started](#getting-started)
+5. [Authentication](#authentication)
+6. [Managing Sites](#managing-sites)
+7. [Deployments](#deployments)
+8. [Environment Variables](#environment-variables)
+9. [Custom Domains](#custom-domains)
+10. [Logs](#logs)
+11. [Metrics](#metrics)
+12. [Costs](#costs)
+13. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -49,6 +51,331 @@ Anchor Deploy is a self-hosted deployment platform that automatically builds and
 | Static Assets | S3 + CloudFront | Serves images, CSS, JS at edge |
 | Metadata | DynamoDB | Stores projects, deployments, domains |
 | SSL Certificates | ACM | Automatic certificate provisioning |
+
+---
+
+## Installation & Setup
+
+This section is for **administrators** setting up Anchor Deploy for the first time.
+
+### Prerequisites
+
+Before installing Anchor Deploy, ensure you have:
+
+| Requirement | Version | Purpose |
+|-------------|---------|---------|
+| Node.js | 20+ | Runtime for SST and dashboard |
+| npm | 10+ | Package management |
+| AWS CLI | 2.x | AWS resource deployment |
+| Git | 2.x | Repository management |
+
+You also need:
+
+- **AWS Account** with permissions for Lambda, S3, DynamoDB, CloudFront, ACM, CodeBuild, SQS, CloudWatch, Cost Explorer
+- **AWS CLI configured** with valid credentials (`aws configure`)
+
+### Automated Setup (Recommended)
+
+The setup script automates the entire installation process:
+
+```bash
+# Clone the repository
+git clone https://github.com/angkordigital-co/AnchorDigitalDeploy.git
+cd AnchorDigitalDeploy
+
+# Run the setup script
+./setup.sh
+```
+
+#### What the Setup Script Does
+
+| Step | Action | Output |
+|------|--------|--------|
+| 1 | Check prerequisites | Validates Node.js, npm, AWS CLI, credentials |
+| 2 | Install dependencies | Runs `npm install` for all packages |
+| 3 | Generate secrets | Creates `AUTH_SECRET` and `GITHUB_WEBHOOK_SECRET` |
+| 4 | Deploy infrastructure | Runs `npx sst deploy` to create AWS resources |
+| 5 | Configure dashboard | Creates `dashboard/.env.local` with secrets |
+| 6 | Create helper scripts | Generates `create-admin-user.sh` |
+| 7 | Generate documentation | Creates `SETUP-CONFIG.md` reference |
+
+#### Setup Script Options
+
+```bash
+# Default: dev stage, Singapore region
+./setup.sh
+
+# Deploy to production
+./setup.sh --stage prod
+
+# Use a different AWS region
+./setup.sh --region us-east-1
+
+# Skip prerequisite checks (if you know they pass)
+./setup.sh --skip-prereq
+
+# Show all options
+./setup.sh --help
+```
+
+#### Files Created by Setup
+
+| File | Purpose |
+|------|---------|
+| `dashboard/.env.local` | Dashboard configuration with secrets |
+| `create-admin-user.sh` | Script to create admin users |
+| `SETUP-CONFIG.md` | Complete configuration reference |
+
+### Post-Setup Steps
+
+After the setup script completes:
+
+#### 1. Create an Admin User
+
+```bash
+./create-admin-user.sh admin@yourcompany.com YourSecurePassword123
+```
+
+This creates a user in DynamoDB that can log into the dashboard.
+
+#### 2. Get Deployment Outputs
+
+```bash
+npx sst output --stage dev
+```
+
+Note the following values:
+
+| Output | Use |
+|--------|-----|
+| `WebhookApiUrl` | GitHub webhook endpoint |
+| `ApiGatewayUrl` | Dashboard API endpoint |
+| `CloudFrontUrl` | Where sites are served |
+
+#### 3. Update Dashboard Configuration
+
+Edit `dashboard/.env.local` and set `API_GATEWAY_URL` to the actual value from step 2.
+
+#### 4. Start the Dashboard
+
+```bash
+cd dashboard
+npm run dev
+```
+
+The dashboard will be available at `http://localhost:3000`.
+
+### Manual Setup
+
+If you prefer to set up manually without the script:
+
+#### 1. Install Dependencies
+
+```bash
+npm install
+cd dashboard && npm install && cd ..
+```
+
+#### 2. Generate Secrets
+
+```bash
+# Generate AUTH_SECRET (for session encryption)
+openssl rand -base64 32
+
+# Generate GITHUB_WEBHOOK_SECRET (for webhook validation)
+openssl rand -hex 32
+```
+
+#### 3. Deploy Infrastructure
+
+```bash
+export AWS_REGION=ap-southeast-1
+npx sst deploy --stage dev
+```
+
+#### 4. Configure Dashboard
+
+Create `dashboard/.env.local`:
+
+```env
+AUTH_SECRET=<your-generated-auth-secret>
+API_GATEWAY_URL=<api-gateway-url-from-sst-output>
+```
+
+#### 5. Create Admin User
+
+Use the AWS CLI to add a user to DynamoDB:
+
+```bash
+# Get the table name
+TABLE_NAME=$(aws dynamodb list-tables --query "TableNames[?contains(@, 'UsersTable')]" --output text | head -1)
+
+# Create user (hash password first with bcrypt)
+aws dynamodb put-item \
+    --table-name "$TABLE_NAME" \
+    --item '{
+        "userId": {"S": "user-001"},
+        "email": {"S": "admin@example.com"},
+        "passwordHash": {"S": "<bcrypt-hash>"},
+        "createdAt": {"S": "2026-02-02T00:00:00Z"}
+    }'
+```
+
+---
+
+## Configuration
+
+### Infrastructure Configuration
+
+Anchor Deploy uses SST Ion v3 for infrastructure-as-code. Configuration is in `sst.config.ts`.
+
+#### AWS Region
+
+Default region is `ap-southeast-1` (Singapore). To change:
+
+```bash
+export AWS_REGION=us-east-1
+npx sst deploy --stage prod
+```
+
+#### Deployment Stages
+
+| Stage | Purpose | Command |
+|-------|---------|---------|
+| `dev` | Development/testing | `npx sst deploy --stage dev` |
+| `staging` | Pre-production | `npx sst deploy --stage staging` |
+| `prod` | Production | `npx sst deploy --stage prod` |
+
+Each stage creates isolated resources with stage-prefixed names.
+
+### Dashboard Configuration
+
+Dashboard configuration is stored in `dashboard/.env.local`:
+
+```env
+# Required: Session encryption key (32+ characters)
+AUTH_SECRET=your-random-secret-key-here
+
+# Required: Backend API endpoint
+API_GATEWAY_URL=https://abc123.execute-api.ap-southeast-1.amazonaws.com
+
+# Optional: Enable debug logging
+AUTH_DEBUG=true
+```
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `AUTH_SECRET` | Yes | Encrypts JWT session tokens. Generate with `openssl rand -base64 32` |
+| `API_GATEWAY_URL` | Yes | Backend API endpoint from SST outputs |
+| `AUTH_DEBUG` | No | Enable verbose auth logging |
+
+### GitHub Webhook Configuration
+
+Each repository you deploy needs a webhook configured:
+
+1. Go to your GitHub repository
+2. Navigate to **Settings → Webhooks → Add webhook**
+3. Configure:
+
+| Field | Value |
+|-------|-------|
+| Payload URL | `<WebhookApiUrl from SST outputs>` |
+| Content type | `application/json` |
+| Secret | `<GITHUB_WEBHOOK_SECRET from setup>` |
+| SSL verification | Enable |
+| Events | Just the push event |
+
+4. Click **Add webhook**
+
+#### Testing the Webhook
+
+After adding the webhook, GitHub sends a ping event. Check the webhook's **Recent Deliveries** tab to verify it was received successfully (200 response).
+
+### AWS Resource Configuration
+
+#### DynamoDB Tables
+
+| Table | Purpose | Capacity |
+|-------|---------|----------|
+| UsersTable | User accounts | On-demand |
+| ProjectsTable | Site configurations | On-demand |
+| DeploymentsTable | Deployment history | On-demand |
+| DomainsTable | Custom domains | On-demand |
+
+#### S3 Buckets
+
+| Bucket | Purpose | Lifecycle |
+|--------|---------|-----------|
+| ArtifactsBucket | Build outputs | 90-day retention |
+| LogsBucket | Build logs | 14-day to Glacier |
+| StaticAssetsBucket | Static files | No expiration |
+
+#### Lambda Functions
+
+| Function | Purpose | Memory | Timeout |
+|----------|---------|--------|---------|
+| WebhookHandler | Receives GitHub webhooks | 256 MB | 30s |
+| BuildOrchestrator | Manages build queue | 256 MB | 60s |
+| DeployHandler | Deploys to Lambda | 512 MB | 300s |
+| SSR Functions | Renders pages | 1024 MB | 30s |
+
+### Security Configuration
+
+#### Secrets Management
+
+| Secret | Storage | Rotation |
+|--------|---------|----------|
+| `AUTH_SECRET` | `.env.local` | Manual (rotate periodically) |
+| `GITHUB_WEBHOOK_SECRET` | SST config | Manual |
+| User passwords | DynamoDB (bcrypt hashed) | User-initiated |
+| Site env vars (secret) | DynamoDB | Manual |
+
+**Security recommendations**:
+
+1. Use strong, unique secrets (32+ characters)
+2. Never commit `.env.local` to git
+3. Rotate secrets periodically
+4. Use IAM roles with least-privilege access
+
+#### IAM Permissions
+
+The deployment requires these AWS permissions:
+
+- `lambda:*` — Function management
+- `s3:*` — Bucket management
+- `dynamodb:*` — Table management
+- `cloudfront:*` — CDN management
+- `acm:*` — Certificate management
+- `codebuild:*` — Build project management
+- `sqs:*` — Queue management
+- `logs:*` — CloudWatch Logs
+- `cloudwatch:*` — Metrics
+- `ce:*` — Cost Explorer (read-only)
+
+### Updating Configuration
+
+#### Updating Infrastructure
+
+```bash
+# Make changes to infra/*.ts files, then:
+npx sst deploy --stage dev
+```
+
+SST handles incremental updates—only changed resources are modified.
+
+#### Updating Dashboard
+
+```bash
+cd dashboard
+npm run build
+# Deploy to your hosting platform
+```
+
+#### Adding More Admin Users
+
+```bash
+./create-admin-user.sh newadmin@example.com NewPassword123
+```
 
 ---
 
@@ -559,3 +886,58 @@ For assistance:
 
 *Last updated: 2026-02-02*
 *Anchor Deploy v1.0*
+
+---
+
+## Appendix: Quick Reference
+
+### Setup Commands
+
+```bash
+# Full automated setup
+./setup.sh
+
+# Production setup
+./setup.sh --stage prod --region ap-southeast-1
+
+# Create admin user
+./create-admin-user.sh email@example.com password
+
+# View SST outputs
+npx sst output --stage dev
+
+# Start dashboard locally
+cd dashboard && npm run dev
+```
+
+### Important Files
+
+| File | Purpose |
+|------|---------|
+| `sst.config.ts` | Infrastructure entry point |
+| `infra/*.ts` | AWS resource definitions |
+| `dashboard/.env.local` | Dashboard secrets |
+| `SETUP-CONFIG.md` | Generated configuration reference |
+| `create-admin-user.sh` | Admin user creation script |
+
+### AWS Resources Naming
+
+Resources are named with the pattern: `anchor-deploy-{stage}-{resource}-{random}`
+
+Example: `anchor-deploy-dev-ProjectsTable-abc123`
+
+### Useful AWS CLI Commands
+
+```bash
+# List DynamoDB tables
+aws dynamodb list-tables
+
+# Check Lambda functions
+aws lambda list-functions --query "Functions[?contains(FunctionName, 'anchor')]"
+
+# View CloudFront distributions
+aws cloudfront list-distributions
+
+# Check CodeBuild projects
+aws codebuild list-projects
+```
