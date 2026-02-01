@@ -10,28 +10,29 @@ See: .planning/PROJECT.md (updated 2026-02-01)
 
 ## Current Position
 
-Phase: 2 of 3 (Deployment & CDN) - Ready to plan
-Plan: 0 of TBD in current phase
-Status: Phase 1 complete, Phase 2 ready
-Last activity: 2026-02-01 - Completed 01-04-PLAN.md (Environment Variables & Log Streaming)
+Phase: 2 of 3 (Deployment & CDN) - In progress
+Plan: 1 of TBD in current phase
+Status: Phase 2 started
+Last activity: 2026-02-01 - Completed 02-01-PLAN.md (CloudFront CDN Infrastructure)
 
-Progress: [████░░░░░░] 33% (1/3 phases)
+Progress: [████░░░░░░] 33% (1/3 phases, Plan 02-01 complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 4
-- Average duration: 9 min
-- Total execution time: 0.58 hours
+- Total plans completed: 5
+- Average duration: 10 min
+- Total execution time: 0.85 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-infrastructure-build | 4/4 | 35 min | 9 min |
+| 02-deployment-cdn | 1/? | 16 min | 16 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (8 min), 01-02 (6 min), 01-03 (13 min), 01-04 (8 min)
+- Last 5 plans: 01-02 (6 min), 01-03 (13 min), 01-04 (8 min), 02-01 (16 min)
 - Trend: Stable
 
 *Updated after each plan completion*
@@ -60,6 +61,9 @@ Recent decisions affecting current work:
 - **Structured EnvVar schema with isSecret flag:** Prepares for Secrets Manager migration in Phase 2 (01-04)
 - **x-user-id header for Phase 1 auth:** Placeholder until dashboard auth in Phase 3 (01-04)
 - **Polling-based logs:** Phase 1 uses REST polling; Phase 3 adds WebSocket/SSE (01-04)
+- **S3 origin without OAC for Plan 01:** Deferred proper Origin Access Control to Plan 02 to avoid bucket policy conflicts (02-01)
+- **Lambda Function URLs for CloudFront origins:** Simpler than ALB, lower cost (02-01)
+- **Native CloudFront resource over SST Cdn:** Fine-grained cache behavior control needed for Next.js (02-01)
 
 ### Pending Todos
 
@@ -72,7 +76,9 @@ None.
 - ~~Lambda packaging strategy~~ RESOLVED: OpenNext packaging to Lambda zip uploaded to S3
 - ~~Database connection pooling strategy~~ NOT NEEDED: Using DynamoDB, no connection pooling required
 
-**Phase 2 - Research Needed:**
+**Phase 2 - Issues to Resolve:**
+- Lambda Function URL 403 Forbidden despite public auth config (SST bug or AWS restriction) - needs resolution in Plan 02
+- S3 bucket policy for CloudFront OAC - needs configuration during Plan 02 deployment
 - ISR cache storage strategy (S3 vs ElastiCache vs DynamoDB) for cost/latency tradeoffs
 - Certificate quota management strategy for scaling to 50+ custom domains
 
@@ -93,9 +99,12 @@ None.
 | Lambda | BuildOrchestrator | anchor-deploy-dev-BuildOrchestratorFunction-bdwwezte |
 | Lambda | EnvVarsHandler | anchor-deploy-dev-EnvVarsHandlerFunction-* |
 | Lambda | LogsHandler | anchor-deploy-dev-LogsHandlerFunction-* |
+| Lambda | ServerFunction (SSR) | anchor-deploy-dev-ServerFunctionFunction-bcdnwtma |
+| Lambda | ImageFunction (optimization) | anchor-deploy-dev-ImageFunctionFunction-ewvzazcs |
 | SQS | BuildQueue | anchor-deploy-dev-BuildQueueQueue-wwzrzbfu |
 | SQS | BuildQueueDLQ | anchor-deploy-dev-BuildQueueDLQQueue-twxkcxct |
 | CodeBuild | NextjsBuild | anchor-deploy-nextjs-build |
+| CloudFront | Distribution | E22NAK3VFROWZ9 (d3361tfgki4fpn.cloudfront.net) |
 | Secret | WEBHOOK_SECRET | SST managed |
 
 ## API Endpoints
@@ -110,17 +119,17 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-02-01 05:37 UTC
-Stopped at: Completed Phase 1 (01-04-PLAN.md)
+Last session: 2026-02-01 14:16 UTC
+Stopped at: Completed Phase 2 Plan 01 (02-01-PLAN.md - CloudFront CDN Infrastructure)
 Resume file: None
 
-## Phase 1 Complete - Summary
+## Phase 2 Plan 01 Complete - Summary
 
-Phase 1 infrastructure fully deployed:
-- GitHub webhook to SQS to CodeBuild pipeline
-- OpenNext packaging for Next.js apps
-- Environment variables injection into builds
-- Build logs streaming from CloudWatch
-- All API endpoints tested and working
+CloudFront CDN infrastructure deployed:
+- CloudFront distribution with multi-origin routing (E22NAK3VFROWZ9)
+- Server Lambda for SSR/API routes (512MB, 30s timeout)
+- Image Lambda for Next.js optimization (1024MB, 30s timeout)
+- Deployment schema extended with version tracking for rollback
+- Domain schema created for custom domain support (Plan 03)
 
-Ready for Phase 2: Domain & Serving (CloudFront, Lambda@Edge, custom domains)
+Ready for Plan 02: Deployment process (OpenNext packaging, Lambda updates, CloudFront invalidation)
