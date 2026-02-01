@@ -24,7 +24,7 @@ export default $config({
     // Import infrastructure modules
     // Order matters: database and storage first, then deployment (uses storage), then build-pipeline (uses deployment), then webhooks
     // (webhooks imports buildQueue from build-pipeline and rollbackHandler/domainsHandler from deployment)
-    const { projectsTable, deploymentsTable, domainsTable } = await import("./infra/database.js");
+    const { usersTable, projectsTable, deploymentsTable, domainsTable } = await import("./infra/database.js");
     const { artifactsBucket, logsBucket, staticAssetsBucket } = await import("./infra/storage.js");
     const { distribution, serverFunction, imageFunction, deployHandler, rollbackHandler, domainsHandler } = await import("./infra/deployment.js");
     const { buildQueue, codeBuildProject, buildOrchestrator } = await import("./infra/build-pipeline.js");
@@ -32,6 +32,7 @@ export default $config({
 
     return {
       region: "ap-southeast-1",
+      usersTable: usersTable.name,
       projectsTable: projectsTable.name,
       deploymentsTable: deploymentsTable.name,
       domainsTable: domainsTable.name,

@@ -5,15 +5,43 @@
  * All queries MUST filter by userId to prevent data leakage.
  *
  * Tables:
+ * - Users: Stores user credentials and profiles for dashboard authentication
  * - Projects: Stores project configurations (repo URL, branch, env vars)
  * - Deployments: Stores deployment history per project
  *
  * Access patterns supported:
+ * - Get user by userId (primary key)
+ * - Get user by email (via EmailIndex GSI) for login
  * - Get project by projectId (with userId verification)
  * - List all projects for a user (via UserIdIndex GSI)
  * - List deployments for a project (with userId verification)
  * - Get deployment by deploymentId (via DeploymentIdIndex GSI)
  */
+
+/**
+ * Users Table
+ *
+ * Primary Key: userId (PK)
+ * GSI: EmailIndex on email for login lookup
+ *
+ * Stores user credentials for dashboard authentication.
+ * Passwords are bcrypt hashed before storage.
+ * Billing: ON_DEMAND (low traffic)
+ */
+export const usersTable = new sst.aws.Dynamo("UsersTable", {
+  fields: {
+    userId: "string",
+    email: "string",
+  },
+  primaryIndex: {
+    hashKey: "userId",
+  },
+  globalIndexes: {
+    EmailIndex: {
+      hashKey: "email",
+    },
+  },
+});
 
 /**
  * Projects Table
