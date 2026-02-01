@@ -94,6 +94,45 @@ const envVarsHandler = new sst.aws.Function("EnvVarsHandler", {
   },
 });
 
+/**
+ * Build Logs Handler Function
+ *
+ * Retrieves build logs from CloudWatch Logs.
+ * - GET: Fetch logs for a deployment (supports pagination via nextToken)
+ *
+ * Returns log lines with timestamps from CodeBuild.
+ * Phase 1 uses polling; Phase 3 will add WebSocket/SSE for real-time.
+ */
+const logsHandler = new sst.aws.Function("LogsHandler", {
+  handler: "packages/functions/logs-handler/index.handler",
+  timeout: "30 seconds",
+  link: [deploymentsTable],
+  environment: {
+    DEPLOYMENTS_TABLE: deploymentsTable.name,
+  },
+});
+
+/**
+ * IAM Policy for CloudWatch Logs access
+ *
+ * Grants the logs handler permission to read CodeBuild logs.
+ */
+const logsHandlerPolicy = new aws.iam.RolePolicy("LogsHandlerPolicy", {
+  role: logsHandler.nodes.role.name,
+  policy: $util.jsonStringify({
+    Version: "2012-10-17",
+    Statement: [
+      {
+        Effect: "Allow",
+        Action: ["logs:GetLogEvents", "logs:DescribeLogStreams"],
+        Resource: [
+          "arn:aws:logs:*:*:log-group:/aws/codebuild/anchor-deploy-nextjs-build:*",
+        ],
+      },
+    ],
+  }),
+});
+
 // Route: POST /webhook/{projectId}
 // GitHub sends push events here
 webhookApi.route("POST /webhook/{projectId}", webhookHandler.arn);
@@ -109,5 +148,9 @@ webhookApi.route("GET /projects/{projectId}/env", envVarsHandler.arn);
 // Route: PUT /projects/{projectId}/env
 // Update project environment variables
 webhookApi.route("PUT /projects/{projectId}/env", envVarsHandler.arn);
+
+// Route: GET /deployments/{deploymentId}/logs
+// Fetch build logs from CloudWatch
+webhookApi.route("GET /deployments/{deploymentId}/logs", logsHandler.arn);
 
 export { webhookSecret };
