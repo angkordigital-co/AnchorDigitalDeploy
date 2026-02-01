@@ -11,28 +11,28 @@ See: .planning/PROJECT.md (updated 2026-02-01)
 ## Current Position
 
 Phase: 1 of 3 (Infrastructure & Build)
-Plan: 0 of 3 in current phase
-Status: Ready to plan
-Last activity: 2026-02-01 — Roadmap created
+Plan: 1 of 4 in current phase
+Status: In progress
+Last activity: 2026-02-01 - Completed 01-01-PLAN.md (Infrastructure Foundation)
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [█░░░░░░░░░] 10%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 0
-- Average duration: - min
-- Total execution time: 0 hours
+- Total plans completed: 1
+- Average duration: 8 min
+- Total execution time: 0.13 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| - | - | - | - |
+| 01-infrastructure-build | 1/4 | 8 min | 8 min |
 
 **Recent Trend:**
-- Last 5 plans: None yet
-- Trend: N/A
+- Last 5 plans: 01-01 (8 min)
+- Trend: N/A (need more data)
 
 *Updated after each plan completion*
 
@@ -47,17 +47,20 @@ Recent decisions affecting current work:
 - Production-only deployments: Simplify v1 scope, preview can come later
 - AWS Singapore region: Lowest latency to Cambodia users
 - Web dashboard included: Needed for managing multiple sites effectively
+- **Row-level security for tenant isolation:** Shared DynamoDB tables with userId GSI (01-01)
+- **ON_DEMAND DynamoDB billing:** Low traffic, no benefit from provisioned (01-01)
+- **90-day artifact retention:** Sufficient for rollback, prevents cost balloon (01-01)
 
 ### Pending Todos
 
-None yet.
+None.
 
 ### Blockers/Concerns
 
 **Phase 1 - Architecture Decisions Required:**
-- Multi-tenant data isolation model (row-level security vs schema-per-tenant) must be decided before DynamoDB schema creation
+- ~~Multi-tenant data isolation model~~ RESOLVED: Row-level security with userId GSI
 - Lambda packaging strategy (Container Images vs Layers) affects build pipeline design
-- Database connection pooling strategy (RDS Proxy if using relational DB) impacts infrastructure setup
+- ~~Database connection pooling strategy~~ NOT NEEDED: Using DynamoDB, no connection pooling required
 
 **Phase 2 - Research Needed:**
 - ISR cache storage strategy (S3 vs ElastiCache vs DynamoDB) for cost/latency tradeoffs
@@ -66,8 +69,17 @@ None yet.
 **Phase 3 - Validation Needed:**
 - OpenNext v3 compatibility with Next.js 15 features (App Router, Server Actions) needs testing
 
+## Deployed Resources (dev stage)
+
+| Resource | Name | Region |
+|----------|------|--------|
+| DynamoDB | anchor-deploy-dev-ProjectsTable-cwdhxuwt | ap-southeast-1 |
+| DynamoDB | anchor-deploy-dev-DeploymentsTable-sdhkosws | ap-southeast-1 |
+| S3 | anchor-deploy-dev-artifactsbucket-vowmncbh | ap-southeast-1 |
+| S3 | anchor-deploy-dev-logsbucket-wacxnrhx | ap-southeast-1 |
+
 ## Session Continuity
 
-Last session: 2026-02-01 after roadmap creation
-Stopped at: Roadmap and STATE files created, ready for Phase 1 planning
+Last session: 2026-02-01 12:01 UTC
+Stopped at: Completed 01-01-PLAN.md, ready for 01-02 (Webhook Handler)
 Resume file: None
