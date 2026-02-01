@@ -8,6 +8,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@aws-sdk/client-cloudwatch": "^3.980.0",
     "@aws-sdk/client-cloudwatch-logs": "^3.980.0",
     "@aws-sdk/client-dynamodb": "^3.980.0",
     "@aws-sdk/lib-dynamodb": "^3.980.0",
@@ -27,6 +28,7 @@
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-hook-form": "^7.71.1",
+    "recharts": "^3.7.0",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.4.0",
     "zod": "^4.3.6"

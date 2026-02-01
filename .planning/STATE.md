@@ -11,18 +11,18 @@ See: .planning/PROJECT.md (updated 2026-02-01)
 ## Current Position
 
 Phase: 3 of 3 (Dashboard & Observability) - In progress
-Plan: 2 of 4 in current phase
-Status: Plan 03-02 complete, continuing to Plan 03-03
-Last activity: 2026-02-01 - Completed 03-02-PLAN.md (Sites List & Deployments)
+Plan: 3 of 4 in current phase
+Status: Plan 03-03 complete, continuing to Plan 03-04
+Last activity: 2026-02-01 - Completed 03-03-PLAN.md (Env Vars & Custom Domains)
 
-Progress: [████████░░] 82% (9/11 plans complete)
+Progress: [█████████░] 91% (10/11 plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 9
+- Total plans completed: 10
 - Average duration: 8 min
-- Total execution time: 1.22 hours
+- Total execution time: 1.32 hours
 
 **By Phase:**
 
@@ -30,10 +30,10 @@ Progress: [████████░░] 82% (9/11 plans complete)
 |-------|-------|-------|----------|
 | 01-infrastructure-build | 4/4 | 35 min | 9 min |
 | 02-deployment-cdn | 3/3 | 28 min | 9 min |
-| 03-dashboard-observability | 2/4 | 10 min | 5 min |
+| 03-dashboard-observability | 3/4 | 16 min | 5 min |
 
 **Recent Trend:**
-- Last 5 plans: 02-02 (5 min), 02-03 (7 min), 03-01 (6 min), 03-02 (4 min)
+- Last 5 plans: 02-03 (7 min), 03-01 (6 min), 03-02 (4 min), 03-03 (6 min)
 - Trend: Stable at 6 min average
 
 *Updated after each plan completion*
@@ -80,6 +80,9 @@ Recent decisions affecting current work:
 - **Dashboard home redirects to /sites:** Users land directly on sites list (03-02)
 - **Site overview redirects to deployments:** Deployments is primary site view for now (03-02)
 - **Project ownership check in layout:** Security verification once for all site pages (03-02)
+- **sonner over shadcn toast:** Simpler API, better UX with rich colors and auto-dismiss (03-03)
+- **useTransition for mutations:** Native React 18 pattern for concurrent updates (03-03)
+- **Expandable rows for DNS validation:** Better UX than modal, shows context inline (03-03)
 - **Rollback via server action:** Type-safe mutation with automatic revalidation (03-02)
 
 ### Pending Todos
@@ -150,8 +153,8 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-02-01 15:45 UTC
-Stopped at: Completed Plan 03-02 (Sites List & Deployments)
+Last session: 2026-02-01 15:47 UTC
+Stopped at: Completed Plan 03-03 (Env Vars & Custom Domains)
 Resume file: None
 
 ## Phase 3 In Progress - Summary
@@ -172,6 +175,15 @@ Resume file: None
 - Rollback functionality via server action calling POST /projects/{projectId}/rollback
 - Success/error feedback after rollback attempt
 
-**Plan 03-02 Verification:** 3/3 tasks complete, all must_haves verified.
+**Phase 3 Plan 03: Env Vars & Custom Domains** complete:
+- Environment variables page at /sites/[siteId]/env with add/edit/delete/save
+- Secret masking with toggle visibility for secure values
+- Custom domains page at /sites/[siteId]/domains with add domain form
+- Domains table with certificate and CloudFront status badges
+- Expandable DNS validation records for pending certificates
+- Delete confirmation dialog with destructive styling
+- sonner toast integration for success/error feedback
 
-Ready for Plan 03-03: Environment variables editor page
+**Plan 03-03 Verification:** 2/2 tasks complete, all must_haves verified.
+
+Ready for Plan 03-04: Metrics & observability dashboard
