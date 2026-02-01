@@ -68,3 +68,27 @@ export const deploymentsTable = new sst.aws.Dynamo("Deployments", {
     },
   },
 });
+
+/**
+ * Domains Table
+ *
+ * Primary Key: domainId (PK)
+ * GSI: ProjectIdIndex on projectId for "list all domains for project" query
+ *
+ * Stores custom domain configurations with ACM certificate and CloudFront integration status.
+ * Billing: ON_DEMAND (usage too low to benefit from provisioned capacity)
+ */
+export const domainsTable = new sst.aws.Dynamo("DomainsTable", {
+  fields: {
+    domainId: "string",
+    projectId: "string",
+  },
+  primaryIndex: {
+    hashKey: "domainId",
+  },
+  globalIndexes: {
+    ProjectIdIndex: {
+      hashKey: "projectId",
+    },
+  },
+});

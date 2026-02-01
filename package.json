@@ -10,6 +10,8 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@aws-sdk/client-acm": "^3.980.0",
+    "@aws-sdk/client-cloudfront": "^3.980.0",
     "@aws-sdk/client-cloudwatch-logs": "^3.980.0",
     "@aws-sdk/client-codebuild": "^3.980.0",
     "@aws-sdk/client-dynamodb": "^3.980.0",

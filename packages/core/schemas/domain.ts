@@ -12,15 +12,28 @@ import { z } from "zod";
 /**
  * Certificate status enum
  *
- * Flow: pending -> issued | failed
+ * Flow: pending_validation -> issued | failed
  */
 export const CertificateStatus = z.enum([
-  "pending", // ACM certificate requested, waiting for DNS validation
+  "pending_validation", // ACM certificate requested, waiting for DNS validation
   "issued", // Certificate validated and issued by ACM
   "failed", // Certificate validation failed (DNS not configured, timeout, etc.)
 ]);
 
 export type CertificateStatus = z.infer<typeof CertificateStatus>;
+
+/**
+ * CloudFront integration status
+ *
+ * Flow: pending -> active | failed
+ */
+export const CloudFrontStatus = z.enum([
+  "pending", // Waiting for certificate validation before adding to CloudFront
+  "active", // Domain added to CloudFront distribution with ACM certificate
+  "failed", // Failed to add domain to CloudFront
+]);
+
+export type CloudFrontStatus = z.infer<typeof CloudFrontStatus>;
 
 /**
  * DNS validation record for ACM certificate
@@ -81,6 +94,10 @@ export const DomainSchema = z.object({
    */
   certificateStatus: CertificateStatus.optional(),
   /**
+   * CloudFront distribution integration status
+   */
+  cloudFrontStatus: CloudFrontStatus.optional(),
+  /**
    * DNS validation record (for user to add to their DNS)
    */
   dnsValidation: DnsValidationSchema.optional(),
@@ -109,11 +126,12 @@ export type CreateDomainInput = z.infer<typeof CreateDomainSchema>;
 
 /**
  * Schema for updating a domain
- * Used to update certificate status and DNS validation info
+ * Used to update certificate status, CloudFront status, and DNS validation info
  */
 export const UpdateDomainSchema = z.object({
   certificateArn: DomainSchema.shape.certificateArn,
   certificateStatus: DomainSchema.shape.certificateStatus,
+  cloudFrontStatus: DomainSchema.shape.cloudFrontStatus,
   dnsValidation: DomainSchema.shape.dnsValidation,
 });
 
