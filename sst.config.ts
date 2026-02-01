@@ -22,11 +22,11 @@ export default $config({
   },
   async run() {
     // Import infrastructure modules
-    // Order matters: database and storage first, then deployment (uses storage), then build-pipeline, then webhooks
+    // Order matters: database and storage first, then deployment (uses storage), then build-pipeline (uses deployment), then webhooks
     // (webhooks imports buildQueue from build-pipeline)
     const { projectsTable, deploymentsTable } = await import("./infra/database.js");
-    const { artifactsBucket, logsBucket } = await import("./infra/storage.js");
-    const { distribution, serverFunction, imageFunction } = await import("./infra/deployment.js");
+    const { artifactsBucket, logsBucket, staticAssetsBucket } = await import("./infra/storage.js");
+    const { distribution, serverFunction, imageFunction, deployHandler } = await import("./infra/deployment.js");
     const { buildQueue, codeBuildProject, buildOrchestrator } = await import("./infra/build-pipeline.js");
     const { webhookApi, webhookSecret } = await import("./infra/webhooks.js");
 
@@ -36,6 +36,7 @@ export default $config({
       deploymentsTable: deploymentsTable.name,
       artifactsBucket: artifactsBucket.name,
       logsBucket: logsBucket.name,
+      staticAssetsBucket: staticAssetsBucket.name,
       webhookUrl: webhookApi.url,
       buildQueueUrl: buildQueue.url,
       codeBuildProject: codeBuildProject.name,
@@ -45,7 +46,7 @@ export default $config({
       serverFunctionName: serverFunction.name,
       serverFunctionUrl: serverFunction.url,
       imageFunctionName: imageFunction.name,
-      staticAssetsBucket: artifactsBucket.name, // Reusing artifacts bucket for static assets
+      deployHandlerName: deployHandler.name,
     };
   },
 });

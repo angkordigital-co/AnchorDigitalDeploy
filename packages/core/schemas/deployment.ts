@@ -10,11 +10,12 @@ import { z } from "zod";
 /**
  * Deployment status enum
  *
- * Flow: queued -> building -> deploying -> success | failed | cancelled
+ * Flow: queued -> building -> built -> deploying -> success | failed | cancelled
  */
 export const DeploymentStatus = z.enum([
   "queued", // Received webhook, waiting for CodeBuild
   "building", // CodeBuild in progress
+  "built", // Build complete, artifacts uploaded, waiting for deployment
   "deploying", // OpenNext artifacts being deployed to Lambda/S3
   "success", // Deployment complete and live
   "failed", // Build or deployment failed

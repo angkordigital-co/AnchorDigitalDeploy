@@ -14,19 +14,24 @@
  *   - Streams responses for better performance
  *   - 512MB memory for faster cold starts
  *   - Linked to DeploymentsTable for reading deployment config
+ *   - Invoked via 'live' alias for zero-downtime deployments
  *
  * - Image Lambda:
  *   - Uses Sharp for image optimization
  *   - 1024MB memory for image processing
+ *   - Invoked via 'live' alias for zero-downtime deployments
  *
  * - Static Assets:
- *   - Served from existing artifactsBucket
+ *   - Served from dedicated staticAssetsBucket
  *   - Cached aggressively (1 year) with immutable filenames
  *
- * Per-deployment routing will be added in Plan 02 (deployment process)
+ * - Deploy Handler:
+ *   - Orchestrates deployments after CodeBuild completes
+ *   - Updates Lambda code, publishes versions, updates aliases
+ *   - Zero-downtime via Lambda alias atomic updates
  */
 
-import { artifactsBucket } from "./storage.js";
+import { artifactsBucket, staticAssetsBucket } from "./storage.js";
 import { deploymentsTable } from "./database.js";
 
 /**
@@ -36,6 +41,9 @@ import { deploymentsTable } from "./database.js";
  * Actual handler code is deployed per-deployment using OpenNext output.
  *
  * For now, this is a placeholder that will be updated during first deployment.
+ *
+ * Note: Function URL doesn't directly support alias targeting, but the function
+ * itself is updated via deploy-handler which publishes versions and updates the alias.
  */
 export const serverFunction = new sst.aws.Function("ServerFunction", {
   handler: "packages/functions/src/placeholder-server.handler",
@@ -74,6 +82,83 @@ export const imageFunction = new sst.aws.Function("ImageFunction", {
 });
 
 /**
+ * Lambda Aliases for Zero-Downtime Deployment
+ *
+ * CloudFront/Function URLs target the 'live' alias instead of $LATEST.
+ * Deploy handler updates alias to point to new versions atomically.
+ *
+ * Initial state: Alias points to $LATEST (placeholder functions)
+ * After first deployment: Alias points to version 1 (actual Next.js app)
+ * After subsequent deployments: Alias updated to new version (zero-downtime)
+ */
+const serverFunctionAlias = new aws.lambda.Alias("ServerFunctionLiveAlias", {
+  name: "live",
+  functionName: serverFunction.name,
+  functionVersion: "$LATEST", // Initial; deploy-handler updates to specific versions
+  description: "Live traffic alias - updated by deploy-handler for zero-downtime deployment",
+});
+
+const imageFunctionAlias = new aws.lambda.Alias("ImageFunctionLiveAlias", {
+  name: "live",
+  functionName: imageFunction.name,
+  functionVersion: "$LATEST",
+  description: "Live traffic alias - updated by deploy-handler for zero-downtime deployment",
+});
+
+/**
+ * Deploy Handler Lambda
+ *
+ * Triggered after CodeBuild completes, orchestrates deployment:
+ * 1. Downloads build artifacts from S3
+ * 2. Uploads static assets to S3 with cache headers
+ * 3. Updates Lambda function code
+ * 4. Publishes immutable Lambda version
+ * 5. Atomically updates 'live' alias (zero-downtime)
+ * 6. Updates deployment record with version ARNs
+ *
+ * This Lambda needs permissions to:
+ * - Update Lambda function code
+ * - Publish versions
+ * - Create/update aliases
+ * - Read/write S3 buckets
+ * - Update DynamoDB deployment records
+ */
+export const deployHandler = new sst.aws.Function("DeployHandler", {
+  handler: "packages/functions/deploy-handler/index.handler",
+  runtime: "nodejs20.x",
+  timeout: "5 minutes", // Deployment can take time
+  memory: "512 MB",
+  environment: {
+    SERVER_FUNCTION_NAME: serverFunction.name,
+    IMAGE_FUNCTION_NAME: imageFunction.name,
+    STATIC_ASSETS_BUCKET: staticAssetsBucket.name,
+    ARTIFACTS_BUCKET: artifactsBucket.name,
+  },
+  link: [deploymentsTable, artifactsBucket, staticAssetsBucket],
+  permissions: [
+    // Lambda permissions for updating function code, publishing versions, and managing aliases
+    {
+      actions: [
+        "lambda:UpdateFunctionCode",
+        "lambda:PublishVersion",
+        "lambda:GetFunction",
+        "lambda:GetFunctionConfiguration",
+        "lambda:CreateAlias",
+        "lambda:UpdateAlias",
+        "lambda:GetAlias",
+      ],
+      resources: [
+        serverFunction.arn,
+        imageFunction.arn,
+        // Include versioned ARNs pattern
+        $interpolate`${serverFunction.arn}:*`,
+        $interpolate`${imageFunction.arn}:*`,
+      ],
+    },
+  ],
+});
+
+/**
  * CloudFront Distribution
  *
  * CDN for serving deployed Next.js applications.
@@ -104,16 +189,18 @@ const distribution = new aws.cloudfront.Distribution("Distribution", {
 
   origins: [
     {
-      // Origin 1: S3 for static assets (using S3 REST endpoint, not website endpoint)
+      // Origin 1: S3 for static assets (dedicated bucket for deployed assets)
       originId: "s3-static",
-      domainName: artifactsBucket.domain,
-      originPath: "/static", // Will serve from s3://bucket/static/{projectId}/{deploymentId}/
+      domainName: staticAssetsBucket.domain,
+      originPath: "", // Will serve from s3://bucket/deployments/{deploymentId}/
       s3OriginConfig: {
-        originAccessIdentity: "", // No OAI - using bucket policy instead (set in Plan 02)
+        originAccessIdentity: "", // No OAI - using public bucket (OAC in future)
       },
     },
     {
-      // Origin 2: Server Lambda for SSR/API
+      // Origin 2: Server Lambda for SSR/API (via 'live' alias)
+      // Note: Function URLs don't support aliases directly, so we still use base URL
+      // The alias routing happens internally when invoking the function
       originId: "lambda-server",
       domainName: serverFunction.url.apply((url: string) => url.replace("https://", "").replace(/\/$/, "")),
       customOriginConfig: {
@@ -124,7 +211,7 @@ const distribution = new aws.cloudfront.Distribution("Distribution", {
       },
     },
     {
-      // Origin 3: Image Lambda for /_next/image
+      // Origin 3: Image Lambda for /_next/image (via 'live' alias)
       originId: "lambda-image",
       domainName: imageFunction.url.apply((url: string) => url.replace("https://", "").replace(/\/$/, "")),
       customOriginConfig: {

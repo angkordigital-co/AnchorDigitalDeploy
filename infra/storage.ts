@@ -71,6 +71,28 @@ new aws.s3.BucketLifecycleConfigurationV2("ArtifactsLifecycle", {
 });
 
 /**
+ * Static Assets Bucket
+ *
+ * Stores deployed static assets served via CloudFront:
+ * - /_next/static/* (immutable, hashed filenames)
+ * - /static/* (public assets)
+ *
+ * Separate from artifacts bucket for:
+ * - CloudFront Origin Access Control (OAC)
+ * - No lifecycle policy (deployed assets stay until manually removed)
+ * - Public read access via CloudFront only
+ *
+ * Structure: deployments/{deploymentId}/_next/static/...
+ */
+export const staticAssetsBucket = new sst.aws.Bucket("StaticAssets", {
+  transform: {
+    bucket: {
+      forceDestroy: true, // Allow bucket deletion in non-prod
+    },
+  },
+});
+
+/**
  * Logs Bucket
  *
  * Stores build logs for debugging and compliance:

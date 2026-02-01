@@ -7,7 +7,7 @@
  * 3. Build Orchestrator Lambda: Processes SQS messages, triggers CodeBuild
  *
  * Flow:
- * Webhook → SQS Queue → Build Orchestrator → CodeBuild → S3 Artifacts
+ * Webhook → SQS Queue → Build Orchestrator → CodeBuild → Deploy Handler → Live
  *
  * Critical settings:
  * - SQS visibility timeout: 1800s (matches CodeBuild timeout)
@@ -17,6 +17,7 @@
 
 import { artifactsBucket } from "./storage.js";
 import { deploymentsTable, projectsTable } from "./database.js";
+import { deployHandler } from "./deployment.js";
 
 /**
  * Dead Letter Queue for failed build jobs
@@ -114,6 +115,12 @@ const codeBuildPolicy = new aws.iam.RolePolicy("CodeBuildPolicy", {
         ],
         Resource: ["arn:aws:logs:*:*:log-group:/aws/codebuild/*"],
       },
+      {
+        // Lambda invoke permission for deploy-handler
+        Effect: "Allow",
+        Action: ["lambda:InvokeFunction"],
+        Resource: [deployHandler.arn],
+      },
     ],
   }),
 });
@@ -160,6 +167,11 @@ export const codeBuildProject = new aws.codebuild.Project("NextjsBuild", {
         value: "production",
         type: "PLAINTEXT",
       },
+      {
+        name: "DEPLOY_HANDLER_NAME",
+        value: deployHandler.name,
+        type: "PLAINTEXT",
+      },
     ],
   },
 
@@ -202,14 +214,23 @@ phases:
       - echo "Uploading artifacts to S3..."
       - aws s3 cp lambda.zip s3://$ARTIFACTS_BUCKET/artifacts/$PROJECT_ID/$COMMIT_SHA/lambda.zip
       - aws s3 cp --recursive .open-next/assets s3://$ARTIFACTS_BUCKET/static/$PROJECT_ID/$COMMIT_SHA/
-      - echo "Updating deployment status..."
+      - echo "Updating deployment status to build complete..."
       - |
         aws dynamodb update-item \\
           --table-name $DEPLOYMENTS_TABLE \\
           --key '{"deploymentId":{"S":"'$DEPLOYMENT_ID'"}}' \\
           --update-expression "SET #status = :status, completedAt = :completedAt, artifactPath = :artifactPath" \\
           --expression-attribute-names '{"#status":"status"}' \\
-          --expression-attribute-values '{":status":{"S":"success"},":completedAt":{"S":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'"},":artifactPath":{"S":"artifacts/'$PROJECT_ID'/'$COMMIT_SHA'/lambda.zip"}}'
+          --expression-attribute-values '{":status":{"S":"built"},":completedAt":{"S":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'"},":artifactPath":{"S":"artifacts/'$PROJECT_ID'/'$COMMIT_SHA'/lambda.zip"}}'
+      - echo "Triggering deployment handler..."
+      - |
+        aws lambda invoke \\
+          --function-name $DEPLOY_HANDLER_NAME \\
+          --invocation-type Event \\
+          --cli-binary-format raw-in-base64-out \\
+          --payload '{"deploymentId":"'$DEPLOYMENT_ID'","projectId":"'$PROJECT_ID'","artifactPath":"artifacts/'$PROJECT_ID'/'$COMMIT_SHA'/"}' \\
+          /tmp/deploy-response.json
+      - echo "Deployment triggered successfully"
 
 cache:
   paths:
