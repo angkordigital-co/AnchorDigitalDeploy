@@ -1,0 +1,123 @@
+# CodeBuild Buildspec for Next.js with OpenNext
+#
+# This buildspec is provided as reference documentation.
+# The actual buildspec is embedded in infra/build-pipeline.ts
+# for atomic deployment with the CodeBuild project.
+#
+# Flow:
+# 1. Install: Set up Node.js 22 and pnpm
+# 2. Pre-build: Clone repo, checkout commit, install deps
+# 3. Build: Run Next.js build, then OpenNext packaging
+# 4. Post-build: Upload artifacts to S3, update deployment status
+#
+# Environment Variables (passed by build orchestrator):
+# - PROJECT_ID: Project identifier
+# - REPO_URL: Git repository URL
+# - COMMIT_SHA: Full commit SHA to checkout
+# - DEPLOYMENT_ID: Deployment record ID
+# - ARTIFACTS_BUCKET: S3 bucket for artifacts
+# - DEPLOYMENTS_TABLE: DynamoDB table name
+#
+# CRITICAL: NODE_ENV=production MUST be set
+# Lambda doesn't set this by default, causing development builds
+
+version: 0.2
+
+env:
+  variables:
+    NODE_ENV: production
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 22
+    commands:
+      - echo "Installing pnpm..."
+      - npm install -g pnpm@latest
+      - echo "Node version:" && node --version
+      - echo "pnpm version:" && pnpm --version
+
+  pre_build:
+    commands:
+      - echo "=== Pre-build Phase ==="
+      - echo "Cloning repository $REPO_URL..."
+      - git clone "$REPO_URL" app
+      - cd app
+      - echo "Checking out commit $COMMIT_SHA..."
+      - git checkout "$COMMIT_SHA"
+      - echo "Installing dependencies..."
+      # Try frozen lockfile first, fall back to regular install
+      # (some repos may not have committed lockfile)
+      - pnpm install --frozen-lockfile 2>/dev/null || pnpm install
+      - echo "Dependencies installed successfully"
+
+  build:
+    commands:
+      - echo "=== Build Phase ==="
+      - cd app
+      - export NODE_ENV=production
+      - echo "NODE_ENV=$NODE_ENV"
+      - echo "Building Next.js application..."
+      - pnpm run build
+      - echo "Next.js build complete"
+      - echo "Running OpenNext packaging..."
+      - npx open-next@latest build
+      - echo "OpenNext packaging complete"
+      - ls -la .open-next/
+
+  post_build:
+    on-failure: ABORT
+    commands:
+      - echo "=== Post-build Phase ==="
+      - cd app
+
+      # Package Lambda function
+      - echo "Packaging Lambda function..."
+      - cd .open-next/server-function
+      - zip -r ../../lambda.zip .
+      - cd ../..
+      - ls -lh lambda.zip
+
+      # Upload Lambda zip to S3
+      - echo "Uploading Lambda zip to S3..."
+      - aws s3 cp lambda.zip "s3://$ARTIFACTS_BUCKET/artifacts/$PROJECT_ID/$COMMIT_SHA/lambda.zip"
+
+      # Upload static assets to S3
+      - echo "Uploading static assets to S3..."
+      - aws s3 cp --recursive .open-next/assets "s3://$ARTIFACTS_BUCKET/static/$PROJECT_ID/$COMMIT_SHA/"
+
+      # Check if image optimization function exists and upload
+      - |
+        if [ -d ".open-next/image-optimization-function" ]; then
+          echo "Packaging image optimization function..."
+          cd .open-next/image-optimization-function
+          zip -r ../../image-optimization.zip .
+          cd ../..
+          aws s3 cp image-optimization.zip "s3://$ARTIFACTS_BUCKET/artifacts/$PROJECT_ID/$COMMIT_SHA/image-optimization.zip"
+        fi
+
+      # Update deployment status to success
+      - echo "Updating deployment status to success..."
+      - |
+        COMPLETED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+        aws dynamodb update-item \
+          --table-name "$DEPLOYMENTS_TABLE" \
+          --key "{\"deploymentId\":{\"S\":\"$DEPLOYMENT_ID\"}}" \
+          --update-expression "SET #status = :status, completedAt = :completedAt, artifactPath = :artifactPath" \
+          --expression-attribute-names '{"#status":"status"}' \
+          --expression-attribute-values "{\":status\":{\"S\":\"success\"},\":completedAt\":{\"S\":\"$COMPLETED_AT\"},\":artifactPath\":{\"S\":\"artifacts/$PROJECT_ID/$COMMIT_SHA/lambda.zip\"}}"
+
+      - echo "=== Build Complete ==="
+      - echo "Artifacts uploaded to s3://$ARTIFACTS_BUCKET/artifacts/$PROJECT_ID/$COMMIT_SHA/"
+
+cache:
+  paths:
+    - 'app/node_modules/**/*'
+    - 'app/.next/cache/**/*'
+
+# Reports section for test results (future use)
+# reports:
+#   test-reports:
+#     files:
+#       - 'app/junit.xml'
+#     file-format: JUNITXML
