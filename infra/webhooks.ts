@@ -17,8 +17,9 @@
  * - Actual build processing happens via SQS queue (Plan 03)
  */
 
-import { projectsTable, deploymentsTable } from "./database.js";
+import { projectsTable, deploymentsTable, domainsTable } from "./database.js";
 import { buildQueue } from "./build-pipeline.js";
+import { rollbackHandler, domainsHandler } from "./deployment.js";
 
 /**
  * SST Secret for GitHub webhook HMAC validation
@@ -152,5 +153,25 @@ webhookApi.route("PUT /projects/{projectId}/env", envVarsHandler.arn);
 // Route: GET /deployments/{deploymentId}/logs
 // Fetch build logs from CloudWatch
 webhookApi.route("GET /deployments/{deploymentId}/logs", logsHandler.arn);
+
+// Route: POST /projects/{projectId}/rollback
+// Instant rollback to previous deployment
+webhookApi.route("POST /projects/{projectId}/rollback", rollbackHandler.arn);
+
+// Route: GET /projects/{projectId}/domains
+// List domains for a project
+webhookApi.route("GET /projects/{projectId}/domains", domainsHandler.arn);
+
+// Route: POST /projects/{projectId}/domains
+// Add custom domain with ACM certificate
+webhookApi.route("POST /projects/{projectId}/domains", domainsHandler.arn);
+
+// Route: GET /projects/{projectId}/domains/{domainId}
+// Get domain details and check certificate status
+webhookApi.route("GET /projects/{projectId}/domains/{domainId}", domainsHandler.arn);
+
+// Route: DELETE /projects/{projectId}/domains/{domainId}
+// Remove custom domain
+webhookApi.route("DELETE /projects/{projectId}/domains/{domainId}", domainsHandler.arn);
 
 export { webhookSecret };

@@ -23,10 +23,10 @@ export default $config({
   async run() {
     // Import infrastructure modules
     // Order matters: database and storage first, then deployment (uses storage), then build-pipeline (uses deployment), then webhooks
-    // (webhooks imports buildQueue from build-pipeline)
-    const { projectsTable, deploymentsTable } = await import("./infra/database.js");
+    // (webhooks imports buildQueue from build-pipeline and rollbackHandler/domainsHandler from deployment)
+    const { projectsTable, deploymentsTable, domainsTable } = await import("./infra/database.js");
     const { artifactsBucket, logsBucket, staticAssetsBucket } = await import("./infra/storage.js");
-    const { distribution, serverFunction, imageFunction, deployHandler } = await import("./infra/deployment.js");
+    const { distribution, serverFunction, imageFunction, deployHandler, rollbackHandler, domainsHandler } = await import("./infra/deployment.js");
     const { buildQueue, codeBuildProject, buildOrchestrator } = await import("./infra/build-pipeline.js");
     const { webhookApi, webhookSecret } = await import("./infra/webhooks.js");
 
@@ -34,6 +34,7 @@ export default $config({
       region: "ap-southeast-1",
       projectsTable: projectsTable.name,
       deploymentsTable: deploymentsTable.name,
+      domainsTable: domainsTable.name,
       artifactsBucket: artifactsBucket.name,
       logsBucket: logsBucket.name,
       staticAssetsBucket: staticAssetsBucket.name,
@@ -47,6 +48,8 @@ export default $config({
       serverFunctionUrl: serverFunction.url,
       imageFunctionName: imageFunction.name,
       deployHandlerName: deployHandler.name,
+      rollbackHandlerName: rollbackHandler.name,
+      domainsHandlerName: domainsHandler.name,
     };
   },
 });

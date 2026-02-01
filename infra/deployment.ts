@@ -32,7 +32,7 @@
  */
 
 import { artifactsBucket, staticAssetsBucket } from "./storage.js";
-import { deploymentsTable } from "./database.js";
+import { deploymentsTable, domainsTable } from "./database.js";
 
 /**
  * Server Lambda Function
@@ -288,6 +288,81 @@ const distribution = new aws.cloudfront.Distribution("Distribution", {
   viewerCertificate: {
     cloudfrontDefaultCertificate: true, // Use default CloudFront cert for now (custom domains in Plan 03)
   },
+});
+
+/**
+ * Rollback Handler Lambda
+ *
+ * Provides instant deployment rollback by updating Lambda aliases.
+ * Zero-downtime rollback (<1 second) without code re-upload.
+ *
+ * Permissions needed:
+ * - lambda:GetAlias - Get current alias state
+ * - lambda:UpdateAlias - Update alias to target version (instant rollback)
+ */
+export const rollbackHandler = new sst.aws.Function("RollbackHandler", {
+  handler: "packages/functions/rollback-handler/index.handler",
+  runtime: "nodejs20.x",
+  timeout: "30 seconds",
+  memory: "256 MB",
+  environment: {
+    SERVER_FUNCTION_NAME: serverFunction.name,
+    IMAGE_FUNCTION_NAME: imageFunction.name,
+  },
+  link: [deploymentsTable],
+  permissions: [
+    {
+      actions: ["lambda:GetAlias", "lambda:UpdateAlias"],
+      resources: [
+        serverFunction.arn,
+        imageFunction.arn,
+        $interpolate`${serverFunction.arn}:*`,
+        $interpolate`${imageFunction.arn}:*`,
+      ],
+    },
+  ],
+});
+
+/**
+ * Domains Handler Lambda
+ *
+ * Manages custom domains with ACM certificate provisioning and CloudFront integration.
+ *
+ * Permissions needed:
+ * - ACM: Request, describe, and delete certificates (must be us-east-1 for CloudFront)
+ * - CloudFront: Get and update distribution config for custom domain aliases
+ */
+export const domainsHandler = new sst.aws.Function("DomainsHandler", {
+  handler: "packages/functions/domains-handler/index.handler",
+  runtime: "nodejs20.x",
+  timeout: "30 seconds",
+  memory: "256 MB",
+  environment: {
+    CLOUDFRONT_DOMAIN: distribution.domainName,
+    CLOUDFRONT_DISTRIBUTION_ID: distribution.id,
+  },
+  link: [domainsTable],
+  permissions: [
+    {
+      // ACM permissions - note region is us-east-1
+      actions: [
+        "acm:RequestCertificate",
+        "acm:DescribeCertificate",
+        "acm:DeleteCertificate",
+        "acm:ListCertificates",
+      ],
+      resources: ["*"], // ACM doesn't support resource-level permissions
+    },
+    {
+      // CloudFront permissions for distribution update
+      actions: [
+        "cloudfront:GetDistribution",
+        "cloudfront:GetDistributionConfig",
+        "cloudfront:UpdateDistribution",
+      ],
+      resources: ["*"], // CloudFront requires wildcard for distribution updates
+    },
+  ],
 });
 
 // Export distribution with SST-style interface
