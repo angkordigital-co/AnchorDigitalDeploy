@@ -24,6 +24,31 @@ const gitHubUrlSchema = z.string().refine(
 );
 
 /**
+ * Environment Variable Schema
+ *
+ * Structured format for build-time environment variables.
+ * - key: Must be uppercase with underscores (e.g., NEXT_PUBLIC_API_URL)
+ * - value: The variable value
+ * - isSecret: If true, should be stored in Secrets Manager (Phase 2)
+ *
+ * Build-time vars (NEXT_PUBLIC_*, API_URL): Stored in DynamoDB (fast, cheap)
+ * Secrets (API keys): Marked with isSecret flag, moved to Secrets Manager in Phase 2
+ */
+export const EnvVarSchema = z.object({
+  key: z
+    .string()
+    .min(1, "Environment variable key is required")
+    .regex(
+      /^[A-Z_][A-Z0-9_]*$/,
+      "Must be uppercase with underscores (e.g., NEXT_PUBLIC_API_URL)"
+    ),
+  value: z.string(),
+  isSecret: z.boolean().default(false),
+});
+
+export type EnvVar = z.infer<typeof EnvVarSchema>;
+
+/**
  * Full Project schema with all fields
  */
 export const ProjectSchema = z.object({
@@ -46,15 +71,11 @@ export const ProjectSchema = z.object({
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
   /**
-   * Environment variables for builds (non-sensitive)
-   * Sensitive values should be stored in AWS Secrets Manager
+   * Environment variables for builds
+   * Stored as array of {key, value, isSecret} objects
+   * All deployments of a project use same env vars unless overridden
    */
-  envVars: z.record(z.string(), z.string()).optional(),
-  /**
-   * References to secrets in AWS Secrets Manager
-   * Format: { ENV_VAR_NAME: "arn:aws:secretsmanager:..." }
-   */
-  secretRefs: z.record(z.string(), z.string()).optional(),
+  envVars: z.array(EnvVarSchema).default([]),
 });
 
 export type Project = z.infer<typeof ProjectSchema>;
@@ -68,7 +89,6 @@ export const CreateProjectSchema = z.object({
   repoUrl: ProjectSchema.shape.repoUrl,
   branch: ProjectSchema.shape.branch,
   envVars: ProjectSchema.shape.envVars,
-  secretRefs: ProjectSchema.shape.secretRefs,
 });
 
 export type CreateProjectInput = z.infer<typeof CreateProjectSchema>;
@@ -82,7 +102,16 @@ export const UpdateProjectSchema = z.object({
   repoUrl: ProjectSchema.shape.repoUrl.optional(),
   branch: ProjectSchema.shape.branch.optional(),
   envVars: ProjectSchema.shape.envVars,
-  secretRefs: ProjectSchema.shape.secretRefs,
 });
 
 export type UpdateProjectInput = z.infer<typeof UpdateProjectSchema>;
+
+/**
+ * Schema for updating project environment variables
+ * Used by PUT /projects/{projectId}/env endpoint
+ */
+export const UpdateEnvVarsSchema = z.object({
+  envVars: z.array(EnvVarSchema),
+});
+
+export type UpdateEnvVarsInput = z.infer<typeof UpdateEnvVarsSchema>;

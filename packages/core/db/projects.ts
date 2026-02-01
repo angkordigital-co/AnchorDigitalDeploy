@@ -12,9 +12,11 @@ import {
   ProjectSchema,
   CreateProjectSchema,
   UpdateProjectSchema,
+  UpdateEnvVarsSchema,
   type Project,
   type CreateProjectInput,
   type UpdateProjectInput,
+  type EnvVar,
 } from "../schemas/project.js";
 
 /**
@@ -218,6 +220,76 @@ export async function deleteProject(
       // Verify ownership before deletion
       ConditionExpression: "userId = :userId",
       ExpressionAttributeValues: {
+        ":userId": userId,
+      },
+    })
+  );
+}
+
+/**
+ * Get project environment variables
+ *
+ * @param projectId - The project's unique ID
+ * @param userId - The user making the request (for ownership verification)
+ * @returns Array of environment variables
+ * @throws Error if project not found or not owned by user
+ */
+export async function getProjectEnvVars(
+  projectId: string,
+  userId: string
+): Promise<EnvVar[]> {
+  if (!projectId || !userId) {
+    throw new Error("projectId and userId are required");
+  }
+
+  const project = await getProject(projectId, userId);
+  if (!project) {
+    throw new Error("Project not found or access denied");
+  }
+
+  return project.envVars || [];
+}
+
+/**
+ * Set project environment variables
+ *
+ * Replaces all environment variables for a project.
+ * All deployments of the project will use these env vars.
+ *
+ * @param projectId - The project's unique ID
+ * @param userId - The user making the request (for ownership verification)
+ * @param envVars - Array of environment variables to set
+ * @throws Error if project not found or not owned by user
+ */
+export async function setProjectEnvVars(
+  projectId: string,
+  userId: string,
+  envVars: EnvVar[]
+): Promise<void> {
+  if (!projectId || !userId) {
+    throw new Error("projectId and userId are required");
+  }
+
+  // Validate env vars array
+  const validated = UpdateEnvVarsSchema.parse({ envVars });
+
+  // Verify project ownership first
+  const project = await getProject(projectId, userId);
+  if (!project) {
+    throw new Error("Project not found or access denied");
+  }
+
+  // Update envVars attribute with ownership verification
+  await docClient.send(
+    new UpdateCommand({
+      TableName: PROJECTS_TABLE,
+      Key: { projectId },
+      UpdateExpression: "SET envVars = :envVars, updatedAt = :updatedAt",
+      ConditionExpression: "userId = :userId",
+      ExpressionAttributeNames: {},
+      ExpressionAttributeValues: {
+        ":envVars": validated.envVars,
+        ":updatedAt": new Date().toISOString(),
         ":userId": userId,
       },
     })
