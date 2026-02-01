@@ -15,6 +15,7 @@
  */
 
 import { projectsTable, deploymentsTable } from "./database.js";
+import { buildQueue } from "./build-pipeline.js";
 
 /**
  * SST Secret for GitHub webhook HMAC validation
@@ -36,20 +37,22 @@ export const webhookApi = new sst.aws.ApiGatewayV2("WebhookApi");
  * Webhook Handler Function
  *
  * Receives GitHub push webhooks, validates HMAC signature,
- * creates deployment record, returns 202 immediately.
+ * creates deployment record, enqueues build job, returns 202 immediately.
  *
  * Environment:
  * - PROJECTS_TABLE: DynamoDB table for project lookup
  * - DEPLOYMENTS_TABLE: DynamoDB table for deployment creation
  * - WEBHOOK_SECRET: Secret for HMAC validation
+ * - BUILD_QUEUE_URL: SQS queue for build jobs (Plan 03)
  */
 const webhookHandler = new sst.aws.Function("WebhookHandler", {
   handler: "packages/functions/webhook-handler/index.handler",
   timeout: "30 seconds",
-  link: [projectsTable, deploymentsTable, webhookSecret],
+  link: [projectsTable, deploymentsTable, webhookSecret, buildQueue],
   environment: {
     PROJECTS_TABLE: projectsTable.name,
     DEPLOYMENTS_TABLE: deploymentsTable.name,
+    BUILD_QUEUE_URL: buildQueue.url,
   },
 });
 

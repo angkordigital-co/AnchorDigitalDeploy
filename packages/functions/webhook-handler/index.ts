@@ -5,6 +5,7 @@ import {
   GetItemCommand,
   PutItemCommand,
 } from "@aws-sdk/client-dynamodb";
+import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
 import { marshall, unmarshall } from "@aws-sdk/util-dynamodb";
 import { nanoid } from "nanoid";
 
@@ -31,6 +32,7 @@ import {
  */
 
 const dynamodb = new DynamoDBClient({});
+const sqs = new SQSClient({});
 
 interface APIGatewayProxyEventV2 {
   headers: Record<string, string | undefined>;
@@ -211,7 +213,46 @@ export async function handler(
     commitSha: commitSha.slice(0, 7),
   });
 
-  // Step 6: Return 202 Accepted immediately
+  // Step 6: Enqueue build job in SQS
+  // This triggers the build orchestrator -> CodeBuild pipeline
+  // We do this AFTER creating deployment so the record exists even if SQS fails
+  try {
+    await sqs.send(
+      new SendMessageCommand({
+        QueueUrl: Resource.BuildQueue.url,
+        MessageBody: JSON.stringify({
+          deploymentId,
+          projectId,
+          commitSha,
+          repoUrl: payload.repository.clone_url,
+          branch,
+        }),
+      })
+    );
+
+    console.log("[ENQUEUED] Build job sent to queue", {
+      deploymentId,
+      projectId,
+    });
+  } catch (error) {
+    // Log but don't fail - deployment record exists, can retry manually
+    console.error("[SQS_ERROR] Failed to enqueue build job", {
+      deploymentId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    // Return success anyway - deployment was created
+    return {
+      statusCode: 202,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message: "Deployment created but build queue failed - will retry",
+        deploymentId,
+        commitSha: commitSha.slice(0, 7),
+      }),
+    };
+  }
+
+  // Step 7: Return 202 Accepted
   return {
     statusCode: 202,
     headers: { "Content-Type": "application/json" },
