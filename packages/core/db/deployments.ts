@@ -330,3 +330,170 @@ export async function listUserDeployments(
 
   return (result.Items ?? []).map((item) => DeploymentSchema.parse(item));
 }
+
+/**
+ * Get the currently active deployment for a project
+ *
+ * Returns the most recent successful deployment.
+ * Used to determine which version is currently serving traffic.
+ *
+ * @param projectId - The project's unique ID
+ * @param userId - The user making the request (for ownership verification)
+ * @returns The active deployment, or null if no successful deployments
+ */
+export async function getActiveDeployment(
+  projectId: string,
+  userId: string
+): Promise<Deployment | null> {
+  if (!projectId || !userId) {
+    throw new Error("projectId and userId are required");
+  }
+
+  // Verify project ownership first
+  const project = await getProject(projectId, userId);
+  if (!project) {
+    throw new Error("Project not found or access denied");
+  }
+
+  // Query for successful deployments, get the most recent
+  const result = await docClient.send(
+    new QueryCommand({
+      TableName: DEPLOYMENTS_TABLE,
+      KeyConditionExpression: "projectId = :projectId",
+      FilterExpression: "#status = :status",
+      ExpressionAttributeNames: {
+        "#status": "status",
+      },
+      ExpressionAttributeValues: {
+        ":projectId": projectId,
+        ":status": "success",
+      },
+      ScanIndexForward: false, // Newest first
+      Limit: 1,
+    })
+  );
+
+  const item = result.Items?.[0];
+  if (!item) {
+    return null;
+  }
+
+  return DeploymentSchema.parse(item);
+}
+
+/**
+ * Update deployment with version data after deployment to CloudFront
+ *
+ * Sets Lambda version ARNs, static assets path, version string, and deployedAt timestamp.
+ *
+ * @param deploymentId - The deployment's unique ID
+ * @param versionData - Version tracking data from deployment process
+ * @returns The updated deployment
+ */
+export async function setDeploymentVersion(
+  deploymentId: string,
+  versionData: {
+    lambdaServerVersionArn: string;
+    lambdaImageVersionArn: string;
+    staticAssetsPath: string;
+    version: string;
+    cloudfrontInvalidationId?: string;
+  }
+): Promise<Deployment> {
+  // Get deployment to find projectId (needed for composite key)
+  const deployment = await getDeployment(deploymentId);
+  if (!deployment) {
+    throw new Error("Deployment not found");
+  }
+
+  const result = await docClient.send(
+    new UpdateCommand({
+      TableName: DEPLOYMENTS_TABLE,
+      Key: {
+        projectId: deployment.projectId,
+        deploymentId: deployment.deploymentId,
+      },
+      UpdateExpression:
+        "SET #lambdaServerVersionArn = :lambdaServerVersionArn, #lambdaImageVersionArn = :lambdaImageVersionArn, #staticAssetsPath = :staticAssetsPath, #version = :version, #deployedAt = :deployedAt" +
+        (versionData.cloudfrontInvalidationId
+          ? ", #cloudfrontInvalidationId = :cloudfrontInvalidationId"
+          : ""),
+      ExpressionAttributeNames: {
+        "#lambdaServerVersionArn": "lambdaServerVersionArn",
+        "#lambdaImageVersionArn": "lambdaImageVersionArn",
+        "#staticAssetsPath": "staticAssetsPath",
+        "#version": "version",
+        "#deployedAt": "deployedAt",
+        ...(versionData.cloudfrontInvalidationId && {
+          "#cloudfrontInvalidationId": "cloudfrontInvalidationId",
+        }),
+      },
+      ExpressionAttributeValues: {
+        ":lambdaServerVersionArn": versionData.lambdaServerVersionArn,
+        ":lambdaImageVersionArn": versionData.lambdaImageVersionArn,
+        ":staticAssetsPath": versionData.staticAssetsPath,
+        ":version": versionData.version,
+        ":deployedAt": Date.now(),
+        ...(versionData.cloudfrontInvalidationId && {
+          ":cloudfrontInvalidationId": versionData.cloudfrontInvalidationId,
+        }),
+      },
+      ReturnValues: "ALL_NEW",
+    })
+  );
+
+  if (!result.Attributes) {
+    throw new Error("Failed to update deployment version");
+  }
+
+  return DeploymentSchema.parse(result.Attributes);
+}
+
+/**
+ * Get recent deployment versions for a project
+ *
+ * Returns successful deployments with version info for rollback UI.
+ * Only includes deployments that have been deployed to CloudFront (have lambdaServerVersionArn).
+ *
+ * @param projectId - The project's unique ID
+ * @param userId - The user making the request (for ownership verification)
+ * @param limit - Maximum number of versions to return (default 10)
+ * @returns Array of deployments with version data
+ */
+export async function getDeploymentVersions(
+  projectId: string,
+  userId: string,
+  limit = 10
+): Promise<Deployment[]> {
+  if (!projectId || !userId) {
+    throw new Error("projectId and userId are required");
+  }
+
+  // Verify project ownership first
+  const project = await getProject(projectId, userId);
+  if (!project) {
+    throw new Error("Project not found or access denied");
+  }
+
+  // Query for successful deployments with version data
+  const result = await docClient.send(
+    new QueryCommand({
+      TableName: DEPLOYMENTS_TABLE,
+      KeyConditionExpression: "projectId = :projectId",
+      FilterExpression:
+        "#status = :status AND attribute_exists(#lambdaServerVersionArn)",
+      ExpressionAttributeNames: {
+        "#status": "status",
+        "#lambdaServerVersionArn": "lambdaServerVersionArn",
+      },
+      ExpressionAttributeValues: {
+        ":projectId": projectId,
+        ":status": "success",
+      },
+      ScanIndexForward: false, // Newest first
+      Limit: limit,
+    })
+  );
+
+  return (result.Items ?? []).map((item) => DeploymentSchema.parse(item));
+}

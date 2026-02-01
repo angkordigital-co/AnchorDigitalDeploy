@@ -52,6 +52,30 @@ export const DeploymentSchema = z.object({
    * S3 path to build logs
    */
   logPath: z.string().optional(),
+  /**
+   * Lambda version ARNs for rollback (Phase 2)
+   * Stored after successful deployment to CloudFront
+   */
+  lambdaServerVersionArn: z.string().optional(),
+  lambdaImageVersionArn: z.string().optional(),
+  /**
+   * S3 path to static assets for this deployment
+   * Format: s3://bucket/static/{projectId}/{deploymentId}/
+   */
+  staticAssetsPath: z.string().optional(),
+  /**
+   * CloudFront invalidation ID (if invalidation was triggered)
+   */
+  cloudfrontInvalidationId: z.string().optional(),
+  /**
+   * Timestamp when deployment went live on CloudFront
+   */
+  deployedAt: z.number().optional(),
+  /**
+   * Version identifier for this deployment
+   * Either v{timestamp} or commit SHA short (first 7 chars)
+   */
+  version: z.string().optional(),
   createdAt: z.string().datetime(),
   /**
    * When deployment reached terminal state (success/failed/cancelled)
@@ -83,6 +107,12 @@ export const UpdateDeploymentSchema = z.object({
   error: DeploymentSchema.shape.error,
   artifactPath: DeploymentSchema.shape.artifactPath,
   logPath: DeploymentSchema.shape.logPath,
+  lambdaServerVersionArn: DeploymentSchema.shape.lambdaServerVersionArn,
+  lambdaImageVersionArn: DeploymentSchema.shape.lambdaImageVersionArn,
+  staticAssetsPath: DeploymentSchema.shape.staticAssetsPath,
+  cloudfrontInvalidationId: DeploymentSchema.shape.cloudfrontInvalidationId,
+  deployedAt: DeploymentSchema.shape.deployedAt,
+  version: DeploymentSchema.shape.version,
   endedAt: DeploymentSchema.shape.endedAt,
 });
 
