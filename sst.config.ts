@@ -22,8 +22,8 @@ export default $config({
   },
   async run() {
     // Import infrastructure modules
-    const { projectsTable, deploymentsTable } = await import("./infra/database");
-    const { artifactsBucket, logsBucket } = await import("./infra/storage");
+    const { projectsTable, deploymentsTable } = await import("./infra/database.js");
+    const { artifactsBucket, logsBucket } = await import("./infra/storage.js");
 
     return {
       region: "ap-southeast-1",
