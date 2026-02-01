@@ -10,17 +10,53 @@ declare module "sst" {
       "name": string
       "type": "sst.aws.Bucket"
     }
+    "BuildOrchestrator": {
+      "name": string
+      "type": "sst.aws.Function"
+    }
+    "BuildQueue": {
+      "type": "sst.aws.Queue"
+      "url": string
+    }
+    "BuildQueueDLQ": {
+      "type": "sst.aws.Queue"
+      "url": string
+    }
     "Deployments": {
       "name": string
       "type": "sst.aws.Dynamo"
+    }
+    "DeploymentsHandler": {
+      "name": string
+      "type": "sst.aws.Function"
+    }
+    "EnvVarsHandler": {
+      "name": string
+      "type": "sst.aws.Function"
     }
     "Logs": {
       "name": string
       "type": "sst.aws.Bucket"
     }
+    "LogsHandler": {
+      "name": string
+      "type": "sst.aws.Function"
+    }
     "Projects": {
       "name": string
       "type": "sst.aws.Dynamo"
+    }
+    "WEBHOOK_SECRET": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
+    "WebhookApi": {
+      "type": "sst.aws.ApiGatewayV2"
+      "url": string
+    }
+    "WebhookHandler": {
+      "name": string
+      "type": "sst.aws.Function"
     }
   }
 }
