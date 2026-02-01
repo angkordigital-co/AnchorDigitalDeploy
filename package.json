@@ -1,0 +1,25 @@
+{
+  "name": "vercel-clone",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.980.0",
+    "@aws-sdk/client-s3": "^3.980.0",
+    "@aws-sdk/lib-dynamodb": "^3.980.0",
+    "nanoid": "^5.1.6",
+    "sst": "^3.17.38",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.160",
+    "@types/node": "^25.1.0",
+    "typescript": "^5.9.3"
+  }
+}
