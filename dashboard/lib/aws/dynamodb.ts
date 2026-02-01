@@ -61,7 +61,7 @@ export async function getProject(projectId: string): Promise<Project | null> {
 /**
  * Get deployments for a project
  *
- * Uses ProjectIdIndex GSI on DeploymentsTable.
+ * Queries directly on projectId partition key.
  * Returns up to 50 most recent deployments.
  */
 export async function getProjectDeployments(
@@ -70,7 +70,6 @@ export async function getProjectDeployments(
 ): Promise<Deployment[]> {
   const command = new QueryCommand({
     TableName: DEPLOYMENTS_TABLE_NAME,
-    IndexName: "ProjectIdIndex",
     KeyConditionExpression: "projectId = :projectId",
     ExpressionAttributeValues: {
       ":projectId": projectId,
@@ -86,18 +85,24 @@ export async function getProjectDeployments(
 /**
  * Get a single deployment by ID
  *
+ * Uses DeploymentIdIndex GSI for lookup by deploymentId alone.
  * Returns null if deployment doesn't exist.
  */
 export async function getDeployment(
   deploymentId: string
 ): Promise<Deployment | null> {
-  const command = new GetCommand({
+  const command = new QueryCommand({
     TableName: DEPLOYMENTS_TABLE_NAME,
-    Key: { deploymentId },
+    IndexName: "DeploymentIdIndex",
+    KeyConditionExpression: "deploymentId = :deploymentId",
+    ExpressionAttributeValues: {
+      ":deploymentId": deploymentId,
+    },
+    Limit: 1,
   });
 
   const result = await dynamodb.send(command);
-  return (result.Item as Deployment) || null;
+  return (result.Items?.[0] as Deployment) || null;
 }
 
 /**
@@ -110,7 +115,6 @@ export async function getLatestSuccessfulDeployment(
 ): Promise<Deployment | null> {
   const command = new QueryCommand({
     TableName: DEPLOYMENTS_TABLE_NAME,
-    IndexName: "ProjectIdIndex",
     KeyConditionExpression: "projectId = :projectId",
     FilterExpression: "#status = :status",
     ExpressionAttributeNames: {
