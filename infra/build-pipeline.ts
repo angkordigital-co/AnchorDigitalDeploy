@@ -259,7 +259,7 @@ cache:
 export const buildOrchestrator = new sst.aws.Function("BuildOrchestrator", {
   handler: "packages/functions/build-orchestrator/index.handler",
   timeout: "60 seconds",
-  link: [deploymentsTable, artifactsBucket],
+  link: [deploymentsTable, artifactsBucket, buildQueue],
   environment: {
     CODEBUILD_PROJECT: codeBuildProject.name,
     ARTIFACTS_BUCKET: artifactsBucket.name,
@@ -269,11 +269,13 @@ export const buildOrchestrator = new sst.aws.Function("BuildOrchestrator", {
 
 /**
  * Grant CodeBuild start permission to orchestrator
+ *
+ * Extract role name from ARN: arn:aws:iam::123456789012:role/role-name
  */
 const orchestratorCodeBuildPolicy = new aws.iam.RolePolicy(
   "OrchestratorCodeBuildPolicy",
   {
-    role: buildOrchestrator.nodes.function.role,
+    role: buildOrchestrator.nodes.role.name,
     policy: $util.jsonStringify({
       Version: "2012-10-17",
       Statement: [
@@ -290,19 +292,18 @@ const orchestratorCodeBuildPolicy = new aws.iam.RolePolicy(
 /**
  * Subscribe orchestrator to build queue
  *
+ * Instead of subscribing a separate function, we use the EventSourceMapping
+ * directly on the build orchestrator function.
+ *
  * Batch size: 1 (process builds one at a time per invocation)
  * This ensures each build gets full attention and proper error handling.
  */
-buildQueue.subscribe(
+const buildQueueEventSource = new aws.lambda.EventSourceMapping(
+  "BuildQueueEventSource",
   {
-    handler: buildOrchestrator.arn,
-    transform: {
-      eventSourceMapping: {
-        batchSize: 1,
-      },
-    },
-  },
-  {
-    // Set through the function directly
+    eventSourceArn: buildQueue.arn,
+    functionName: buildOrchestrator.nodes.function.name,
+    batchSize: 1,
+    enabled: true,
   }
 );
