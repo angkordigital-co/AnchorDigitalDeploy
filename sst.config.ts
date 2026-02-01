@@ -24,6 +24,7 @@ export default $config({
     // Import infrastructure modules
     const { projectsTable, deploymentsTable } = await import("./infra/database.js");
     const { artifactsBucket, logsBucket } = await import("./infra/storage.js");
+    const { webhookApi, webhookSecret } = await import("./infra/webhooks.js");
 
     return {
       region: "ap-southeast-1",
@@ -31,6 +32,7 @@ export default $config({
       deploymentsTable: deploymentsTable.name,
       artifactsBucket: artifactsBucket.name,
       logsBucket: logsBucket.name,
+      webhookUrl: webhookApi.url,
     };
   },
 });

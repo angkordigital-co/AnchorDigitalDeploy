@@ -12,7 +12,7 @@ import {
   GitHubPushPayloadSchema,
   extractBranchName,
   type GitHubPushPayload,
-} from "@anchor-deploy/core/schemas/webhook";
+} from "../../core/schemas/webhook.js";
 
 /**
  * GitHub Webhook Handler
