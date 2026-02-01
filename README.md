@@ -88,7 +88,50 @@ A self-hosted serverless deployment platform for Next.js applications on AWS. Pu
 - AWS account with permissions for Lambda, S3, DynamoDB, CloudFront, ACM, CodeBuild, SQS
 - GitHub repository with Next.js application
 
-## Getting Started
+## Quick Start
+
+The setup script automates the entire configuration process:
+
+```bash
+git clone https://github.com/angkordigital-co/AnchorDigitalDeploy.git
+cd AnchorDigitalDeploy
+./setup.sh
+```
+
+This will:
+1. Check prerequisites (Node.js, AWS CLI, credentials)
+2. Install all dependencies
+3. Generate secrets (AUTH_SECRET, GITHUB_WEBHOOK_SECRET)
+4. Deploy infrastructure to AWS
+5. Configure the dashboard
+6. Create helper scripts
+
+### Setup Options
+
+```bash
+./setup.sh --stage prod     # Deploy to production
+./setup.sh --region us-east-1  # Use different region
+./setup.sh --skip-prereq    # Skip prerequisite checks
+./setup.sh --help           # Show all options
+```
+
+### After Setup
+
+1. Create an admin user:
+   ```bash
+   ./create-admin-user.sh admin@example.com YourPassword
+   ```
+
+2. Start the dashboard:
+   ```bash
+   cd dashboard && npm run dev
+   ```
+
+3. Configure GitHub webhook on your repository (see `SETUP-CONFIG.md`)
+
+## Manual Setup
+
+If you prefer to set up manually:
 
 ### 1. Clone and Install
 
@@ -120,6 +163,11 @@ npx sst deploy   # Production deployment
 ```bash
 cd dashboard
 npm install
+
+# Create .env.local with:
+# AUTH_SECRET=<random-32-char-string>
+# API_GATEWAY_URL=<from sst output>
+
 npm run dev
 ```
 
