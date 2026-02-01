@@ -17,6 +17,9 @@ export interface Project {
   defaultBranch: string;
   webhookSecret?: string;
   envVars?: Record<string, { value: string; isSecret: boolean }>;
+  // Lambda function info (set during deployment by deploy-handler)
+  serverFunctionName?: string;
+  serverFunctionArn?: string;
   createdAt: string;
   updatedAt: string;
 }
