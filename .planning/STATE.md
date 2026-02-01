@@ -11,28 +11,28 @@ See: .planning/PROJECT.md (updated 2026-02-01)
 ## Current Position
 
 Phase: 1 of 3 (Infrastructure & Build)
-Plan: 1 of 4 in current phase
+Plan: 2 of 4 in current phase
 Status: In progress
-Last activity: 2026-02-01 - Completed 01-01-PLAN.md (Infrastructure Foundation)
+Last activity: 2026-02-01 - Completed 01-02-PLAN.md (Webhook Handler)
 
-Progress: [█░░░░░░░░░] 10%
+Progress: [██░░░░░░░░] 20%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 1
-- Average duration: 8 min
-- Total execution time: 0.13 hours
+- Total plans completed: 2
+- Average duration: 7 min
+- Total execution time: 0.23 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01-infrastructure-build | 1/4 | 8 min | 8 min |
+| 01-infrastructure-build | 2/4 | 14 min | 7 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (8 min)
-- Trend: N/A (need more data)
+- Last 5 plans: 01-01 (8 min), 01-02 (6 min)
+- Trend: Improving
 
 *Updated after each plan completion*
 
@@ -50,6 +50,9 @@ Recent decisions affecting current work:
 - **Row-level security for tenant isolation:** Shared DynamoDB tables with userId GSI (01-01)
 - **ON_DEMAND DynamoDB billing:** Low traffic, no benefit from provisioned (01-01)
 - **90-day artifact retention:** Sufficient for rollback, prevents cost balloon (01-01)
+- **Async 202 response pattern:** Webhook returns immediately, build processing via SQS (01-02)
+- **timingSafeEqual for HMAC validation:** Prevents timing attacks on signature comparison (01-02)
+- **Branch filter on main only:** Only process refs/heads/main pushes (01-02)
 
 ### Pending Todos
 
@@ -77,9 +80,13 @@ None.
 | DynamoDB | anchor-deploy-dev-DeploymentsTable-sdhkosws | ap-southeast-1 |
 | S3 | anchor-deploy-dev-artifactsbucket-vowmncbh | ap-southeast-1 |
 | S3 | anchor-deploy-dev-logsbucket-wacxnrhx | ap-southeast-1 |
+| API Gateway | WebhookApi | https://ksha1s4pnc.execute-api.ap-southeast-1.amazonaws.com |
+| Lambda | WebhookHandler | anchor-deploy-dev-WebhookHandlerFunction-svfhrrck |
+| Lambda | DeploymentsHandler | anchor-deploy-dev-DeploymentsHandlerFunction-mdatkxca |
+| Secret | WEBHOOK_SECRET | SST managed |
 
 ## Session Continuity
 
-Last session: 2026-02-01 12:01 UTC
-Stopped at: Completed 01-01-PLAN.md, ready for 01-02 (Webhook Handler)
+Last session: 2026-02-01 05:10 UTC
+Stopped at: Completed 01-02-PLAN.md, ready for 01-03 (Build Pipeline)
 Resume file: None
