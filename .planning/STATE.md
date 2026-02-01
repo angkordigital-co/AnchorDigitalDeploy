@@ -6,16 +6,16 @@ See: .planning/PROJECT.md (updated 2026-02-01)
 
 **Core value:** When a developer pushes to main, the Next.js site is automatically built and deployed to production with zero manual intervention.
 
-**Current focus:** Phase 2 - Deployment & CDN - Ready to plan
+**Current focus:** Phase 3 - Dashboard & Observability - Ready to plan
 
 ## Current Position
 
-Phase: 2 of 3 (Deployment & CDN) - In progress
-Plan: 3 of TBD in current phase
-Status: Phase 2 in progress
-Last activity: 2026-02-01 - Completed 02-03-PLAN.md (Rollback & Custom Domains)
+Phase: 3 of 3 (Dashboard & Observability) - Ready to plan
+Plan: 0 of TBD in current phase
+Status: Phase 2 complete, Phase 3 ready
+Last activity: 2026-02-01 - Completed Phase 2 (Deployment & CDN)
 
-Progress: [████░░░░░░] 47% (2/3 phases, Plan 02-03 complete)
+Progress: [██████░░░░] 67% (2/3 phases complete)
 
 ## Performance Metrics
 
@@ -144,15 +144,18 @@ Last session: 2026-02-01 14:40 UTC
 Stopped at: Completed Phase 2 Plan 03 (02-03-PLAN.md - Rollback & Custom Domains)
 Resume file: None
 
-## Phase 2 Plan 03 Complete - Summary
+## Phase 2 Complete - Summary
 
-Rollback and custom domain management complete:
+**Phase 2: Deployment & CDN** verified and complete:
+- CloudFront distribution with Lambda origins for SSR/API and S3 for static assets
+- Deploy handler orchestrates artifact processing with zero-downtime alias updates
+- Lambda versions published for immutable deployments
 - Rollback API enables instant (<1s) reversion using Lambda alias switching
 - Custom domain API provisions ACM certificates in us-east-1
 - DNS validation instructions returned to users
 - CloudFront distribution automatically updated when certificates validate
-- Domain status tracking with separate certificate and CloudFront states
-- Zero-downtime rollback without code re-upload
-- Full domain flow: Add domain → DNS validation → ACM cert issued → CloudFront updated → active
+- Full flow: GitHub push → Build → Deploy → Live (zero-downtime)
 
-Ready for: Phase 3 dashboard with rollback UI and domain management interface
+**Phase 2 Verification:** 6/6 must-haves confirmed in codebase.
+
+Ready for Phase 3: Dashboard & Observability (web UI, logs, metrics, cost breakdown)

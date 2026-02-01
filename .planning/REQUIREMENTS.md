@@ -112,7 +112,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | INFRA-02 | Phase 1 | Complete |
 | INFRA-03 | Phase 1 | Complete |
 | INFRA-04 | Phase 1 | Complete |
-| INFRA-05 | Phase 1 | Pending |
+| INFRA-05 | Phase 2 | Complete |
 | GIT-01 | Phase 1 | Complete |
 | GIT-02 | Phase 1 | Complete |
 | GIT-03 | Phase 1 | Complete |
@@ -122,16 +122,16 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BUILD-03 | Phase 1 | Complete |
 | BUILD-04 | Phase 1 | Complete |
 | BUILD-05 | Phase 1 | Complete |
-| DEPLOY-01 | Phase 2 | Pending |
-| DEPLOY-02 | Phase 2 | Pending |
-| DEPLOY-03 | Phase 2 | Pending |
-| DEPLOY-04 | Phase 2 | Pending |
-| DEPLOY-05 | Phase 2 | Pending |
-| DEPLOY-06 | Phase 2 | Pending |
-| DOMAIN-01 | Phase 2 | Pending |
-| DOMAIN-02 | Phase 2 | Pending |
-| DOMAIN-03 | Phase 2 | Pending |
-| DOMAIN-04 | Phase 2 | Pending |
+| DEPLOY-01 | Phase 2 | Complete |
+| DEPLOY-02 | Phase 2 | Complete |
+| DEPLOY-03 | Phase 2 | Complete |
+| DEPLOY-04 | Phase 2 | Complete |
+| DEPLOY-05 | Phase 2 | Complete |
+| DEPLOY-06 | Phase 2 | Complete |
+| DOMAIN-01 | Phase 2 | Complete |
+| DOMAIN-02 | Phase 2 | Complete |
+| DOMAIN-03 | Phase 2 | Complete |
+| DOMAIN-04 | Phase 2 | Complete |
 | OBS-01 | Phase 3 | Pending |
 | OBS-02 | Phase 3 | Pending |
 | OBS-03 | Phase 3 | Pending |
@@ -152,4 +152,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-02-01*
-*Last updated: 2026-02-01 after Phase 1 completion (14/14 requirements complete)*
+*Last updated: 2026-02-01 after Phase 2 completion (25/37 requirements complete)*

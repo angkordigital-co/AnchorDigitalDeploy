@@ -13,7 +13,7 @@ Build a self-hosted serverless deployment platform for Next.js applications on A
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Infrastructure & Build** - AWS foundation and automated build pipeline
-- [ ] **Phase 2: Deployment & CDN** - Serverless deployment with custom domains
+- [x] **Phase 2: Deployment & CDN** - Serverless deployment with custom domains
 - [ ] **Phase 3: Dashboard & Observability** - Management UI and production monitoring
 
 ## Phase Details
@@ -58,9 +58,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 02-01-PLAN.md — CloudFront + Lambda Deployment Infrastructure
-- [ ] 02-02-PLAN.md — Deploy Orchestrator + Build Integration
-- [ ] 02-03-PLAN.md — Rollback API + Custom Domains with ACM
+- [x] 02-01-PLAN.md — CloudFront + Lambda Deployment Infrastructure
+- [x] 02-02-PLAN.md — Deploy Orchestrator + Build Integration
+- [x] 02-03-PLAN.md — Rollback API + Custom Domains with ACM
 
 ### Phase 3: Dashboard & Observability
 **Goal**: Web dashboard provides full visibility and control over all deployed sites
@@ -91,5 +91,5 @@ Phases execute in numeric order: 1 → 2 → 3
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Infrastructure & Build | 4/4 | Complete | 2026-02-01 |
-| 2. Deployment & CDN | 0/3 | Ready to execute | - |
+| 2. Deployment & CDN | 3/3 | Complete | 2026-02-01 |
 | 3. Dashboard & Observability | 0/2 | Not started | - |
