@@ -129,7 +129,25 @@ async function getProjectEnvVars(projectId: string): Promise<EnvVar[]> {
   }
 
   const item = unmarshall(result.Item);
-  return (item.envVars as EnvVar[]) || [];
+
+  // Handle both array format and object format (DynamoDB List vs Map)
+  if (!item.envVars) {
+    return [];
+  }
+
+  if (Array.isArray(item.envVars)) {
+    return item.envVars as EnvVar[];
+  }
+
+  // Convert Map/object format to array: { KEY: "value" } -> [{ key: "KEY", value: "value" }]
+  if (typeof item.envVars === "object") {
+    return Object.entries(item.envVars).map(([key, value]) => ({
+      key,
+      value: value as string,
+    }));
+  }
+
+  return [];
 }
 
 /**
