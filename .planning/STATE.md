@@ -11,18 +11,18 @@ See: .planning/PROJECT.md (updated 2026-02-01)
 ## Current Position
 
 Phase: 3 of 3 (Dashboard & Observability) - In progress
-Plan: 1 of 4 in current phase
-Status: Plan 03-01 complete, continuing to Plan 03-02
-Last activity: 2026-02-01 - Completed 03-01-PLAN.md (Dashboard Foundation & Auth)
+Plan: 2 of 4 in current phase
+Status: Plan 03-02 complete, continuing to Plan 03-03
+Last activity: 2026-02-01 - Completed 03-02-PLAN.md (Sites List & Deployments)
 
-Progress: [███████░░░] 73% (8/11 plans complete)
+Progress: [████████░░] 82% (9/11 plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 8
-- Average duration: 9 min
-- Total execution time: 1.15 hours
+- Total plans completed: 9
+- Average duration: 8 min
+- Total execution time: 1.22 hours
 
 **By Phase:**
 
@@ -30,11 +30,11 @@ Progress: [███████░░░] 73% (8/11 plans complete)
 |-------|-------|-------|----------|
 | 01-infrastructure-build | 4/4 | 35 min | 9 min |
 | 02-deployment-cdn | 3/3 | 28 min | 9 min |
-| 03-dashboard-observability | 1/4 | 6 min | 6 min |
+| 03-dashboard-observability | 2/4 | 10 min | 5 min |
 
 **Recent Trend:**
-- Last 5 plans: 02-01 (16 min), 02-02 (5 min), 02-03 (7 min), 03-01 (6 min)
-- Trend: Stable at 9 min average
+- Last 5 plans: 02-02 (5 min), 02-03 (7 min), 03-01 (6 min), 03-02 (4 min)
+- Trend: Stable at 6 min average
 
 *Updated after each plan completion*
 
@@ -77,6 +77,10 @@ Recent decisions affecting current work:
 - **JWT session strategy for Auth.js:** Serverless-friendly, no server-side session storage needed (03-01)
 - **Route groups for layout separation:** (auth) and (dashboard) groups separate layouts without URL segments (03-01)
 - **Suspense boundary for useSearchParams:** Required for static generation in Next.js 16 (03-01)
+- **Dashboard home redirects to /sites:** Users land directly on sites list (03-02)
+- **Site overview redirects to deployments:** Deployments is primary site view for now (03-02)
+- **Project ownership check in layout:** Security verification once for all site pages (03-02)
+- **Rollback via server action:** Type-safe mutation with automatic revalidation (03-02)
 
 ### Pending Todos
 
@@ -146,8 +150,8 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-02-01 15:29 UTC
-Stopped at: Completed Plan 03-01 (Dashboard Foundation & Auth)
+Last session: 2026-02-01 15:45 UTC
+Stopped at: Completed Plan 03-02 (Sites List & Deployments)
 Resume file: None
 
 ## Phase 3 In Progress - Summary
@@ -160,6 +164,14 @@ Resume file: None
 - Dashboard layout with sidebar navigation (Sites, Settings) and header (user info, sign out)
 - Route groups: (auth) for login, (dashboard) for protected pages
 
-**Plan 03-01 Verification:** 3/3 tasks complete, all must_haves verified.
+**Phase 3 Plan 02: Sites List & Deployments** complete:
+- Sites list page at /sites with TanStack Table and status badges
+- DynamoDB query functions: getUserProjects, getProjectDeployments with GSI lookups
+- Site detail layout with ownership verification and sub-navigation
+- Deployment history page at /sites/[siteId]/deployments
+- Rollback functionality via server action calling POST /projects/{projectId}/rollback
+- Success/error feedback after rollback attempt
 
-Ready for Plan 03-02: Sites CRUD API (list/create/edit projects from dashboard)
+**Plan 03-02 Verification:** 3/3 tasks complete, all must_haves verified.
+
+Ready for Plan 03-03: Environment variables editor page
