@@ -10,6 +10,7 @@
   "dependencies": {
     "@aws-sdk/client-cloudwatch": "^3.980.0",
     "@aws-sdk/client-cloudwatch-logs": "^3.980.0",
+    "@aws-sdk/client-cost-explorer": "^3.980.0",
     "@aws-sdk/client-dynamodb": "^3.980.0",
     "@aws-sdk/lib-dynamodb": "^3.980.0",
     "@hookform/resolvers": "^5.2.2",

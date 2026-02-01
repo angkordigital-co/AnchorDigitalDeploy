@@ -34,6 +34,11 @@ declare module "sst" {
       "name": string
       "type": "sst.aws.Function"
     }
+    "ImageFunction": {
+      "name": string
+      "type": "sst.aws.Function"
+      "url": string
+    }
     "Logs": {
       "name": string
       "type": "sst.aws.Bucket"
@@ -45,6 +50,11 @@ declare module "sst" {
     "Projects": {
       "name": string
       "type": "sst.aws.Dynamo"
+    }
+    "ServerFunction": {
+      "name": string
+      "type": "sst.aws.Function"
+      "url": string
     }
     "WEBHOOK_SECRET": {
       "type": "sst.sst.Secret"
