@@ -136,10 +136,11 @@ export const deployHandler = new sst.aws.Function("DeployHandler", {
   },
   link: [deploymentsTable, artifactsBucket, staticAssetsBucket],
   permissions: [
-    // Lambda permissions for updating function code, publishing versions, and managing aliases
+    // Lambda permissions for updating function code, config, publishing versions, and managing aliases
     {
       actions: [
         "lambda:UpdateFunctionCode",
+        "lambda:UpdateFunctionConfiguration", // Needed to update handler to OpenNext entry point
         "lambda:PublishVersion",
         "lambda:GetFunction",
         "lambda:GetFunctionConfiguration",

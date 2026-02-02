@@ -9,6 +9,7 @@ import {
   GetItemCommand,
 } from "@aws-sdk/client-dynamodb";
 import { unmarshall } from "@aws-sdk/util-dynamodb";
+import { Resource } from "sst";
 
 import type { EnvVar } from "../../core/schemas/project.js";
 
@@ -209,6 +210,17 @@ async function startCodeBuild(job: BuildJobMessage): Promise<string> {
       value: "production",
       type: "PLAINTEXT",
     },
+    // GitHub token for cloning private repositories
+    // Only included if the secret is set
+    ...(Resource.GITHUB_TOKEN?.value
+      ? [
+          {
+            name: "GITHUB_TOKEN",
+            value: Resource.GITHUB_TOKEN.value,
+            type: "PLAINTEXT" as const,
+          },
+        ]
+      : []),
     // Project environment variables (NEXT_PUBLIC_*, API_URL, etc.)
     // These are set by users via the API and stored in DynamoDB
     ...projectEnvVars.map((ev) => ({

@@ -46,6 +46,10 @@ declare module "sst" {
       "name": string
       "type": "sst.aws.Function"
     }
+    "GITHUB_TOKEN": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
     "ImageFunction": {
       "name": string
       "type": "sst.aws.Function"

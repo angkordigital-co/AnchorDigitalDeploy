@@ -1,6 +1,7 @@
 import {
   LambdaClient,
   UpdateFunctionCodeCommand,
+  UpdateFunctionConfigurationCommand,
   PublishVersionCommand,
   UpdateAliasCommand,
   CreateAliasCommand,
@@ -19,6 +20,19 @@ import {
 } from "@aws-sdk/client-dynamodb";
 import { unmarshall } from "@aws-sdk/util-dynamodb";
 import { Readable } from "stream";
+import { Resource } from "sst";
+
+/**
+ * Helper to convert a readable stream to a buffer
+ * Required because S3 SDK has streaming buffer size requirements
+ */
+async function streamToBuffer(stream: Readable): Promise<Buffer> {
+  const chunks: Buffer[] = [];
+  for await (const chunk of stream) {
+    chunks.push(Buffer.from(chunk));
+  }
+  return Buffer.concat(chunks);
+}
 
 /**
  * Deploy Handler Lambda
@@ -96,7 +110,7 @@ async function updateDeploymentStatus(
 
   await dynamodb.send(
     new UpdateItemCommand({
-      TableName: process.env.DEPLOYMENTS_TABLE!,
+      TableName: Resource.Deployments.name,
       Key: {
         projectId: { S: projectId },
         deploymentId: { S: deploymentId },
@@ -128,7 +142,7 @@ async function setDeploymentVersion(
 ): Promise<void> {
   await dynamodb.send(
     new UpdateItemCommand({
-      TableName: process.env.DEPLOYMENTS_TABLE!,
+      TableName: Resource.Deployments.name,
       Key: {
         projectId: { S: projectId },
         deploymentId: { S: deploymentId },
@@ -218,12 +232,15 @@ async function uploadStaticAssets(
     );
     const destinationKey = `deployments/${deploymentId}/${relativePath}`;
 
+    // Convert stream to buffer to avoid S3 SDK streaming issues
+    const bodyBuffer = await streamToBuffer(getResult.Body as Readable);
+
     // Upload to static assets bucket
     await s3.send(
       new PutObjectCommand({
         Bucket: staticAssetsBucket,
         Key: destinationKey,
-        Body: getResult.Body as Readable,
+        Body: bodyBuffer,
         ContentType: getResult.ContentType,
         CacheControl: cacheControl,
       })
@@ -264,6 +281,27 @@ async function deployLambdaFunction(
   );
 
   console.log(`[LAMBDA] Function code updated, waiting for completion...`);
+
+  // Step 1.5: Wait for code update then update handler to OpenNext entry point
+  await waitUntilFunctionUpdated(
+    {
+      client: lambda,
+      maxWaitTime: 300,
+    },
+    {
+      FunctionName: functionName,
+    }
+  );
+
+  // Update handler to OpenNext's entry point (index.handler)
+  await lambda.send(
+    new UpdateFunctionConfigurationCommand({
+      FunctionName: functionName,
+      Handler: "index.handler",
+    })
+  );
+
+  console.log(`[LAMBDA] Handler updated to index.handler`);
 
   // Step 2: Wait for update to complete (required before publishing version)
   await waitUntilFunctionUpdated(
