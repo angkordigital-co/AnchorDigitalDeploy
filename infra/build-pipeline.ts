@@ -265,22 +265,39 @@ phases:
 
         # Fix pnpm module resolution: copy ALL packages from .pnpm store to top-level
         # pnpm v10 stores packages in: node_modules/.pnpm/{pkg}@{ver}/node_modules/{pkg}/
+        # Virtual packages (with peer deps) use: {pkg}@{ver}_{peer}@{ver}/node_modules/{pkg}/
         cd $CODEBUILD_SRC_DIR/app/lambda-package
         if [ -d "node_modules/.pnpm" ]; then
           echo "Fixing pnpm module structure..."
 
-          # Find all package directories in .pnpm and copy missing ones to top-level
-          find node_modules/.pnpm -mindepth 3 -maxdepth 3 -type d -path "*/node_modules/*" | while read pkg_store_dir; do
-            # Extract package name (handles scoped packages like @swc/helpers)
-            pkg_name=$(echo "$pkg_store_dir" | sed 's|.*/node_modules/||')
+          # Find ALL nested node_modules directories and copy their contents to top-level
+          # This handles both regular packages and virtual packages with peer deps
+          find node_modules/.pnpm -type d -name "node_modules" | while read nm_dir; do
+            # List all packages in this node_modules directory
+            for pkg_path in "$nm_dir"/*; do
+              [ -d "$pkg_path" ] || continue
+              pkg_name=$(basename "$pkg_path")
 
-            # Skip internal dirs starting with . and already-present packages
-            if [[ "$pkg_name" != .* ]] && [ ! -e "node_modules/$pkg_name" ]; then
-              # Create parent directory for scoped packages
-              mkdir -p "$(dirname "node_modules/$pkg_name")" 2>/dev/null || true
-              echo "  Copying $pkg_name to top-level..."
-              cp -rL "$pkg_store_dir" "node_modules/$pkg_name" 2>/dev/null || true
-            fi
+              # Handle scoped packages (@org/pkg)
+              if [[ "$pkg_name" == @* ]]; then
+                # It's a scope directory, iterate its contents
+                for scoped_pkg in "$pkg_path"/*; do
+                  [ -d "$scoped_pkg" ] || continue
+                  scoped_name="$pkg_name/$(basename "$scoped_pkg")"
+                  if [ ! -e "node_modules/$scoped_name" ]; then
+                    mkdir -p "node_modules/$pkg_name" 2>/dev/null || true
+                    echo "  Copying $scoped_name..."
+                    cp -rL "$scoped_pkg" "node_modules/$scoped_name" 2>/dev/null || true
+                  fi
+                done
+              else
+                # Regular package
+                if [[ "$pkg_name" != .* ]] && [ ! -e "node_modules/$pkg_name" ]; then
+                  echo "  Copying $pkg_name..."
+                  cp -rL "$pkg_path" "node_modules/$pkg_name" 2>/dev/null || true
+                fi
+              fi
+            done
           done
 
           echo "pnpm fix complete"
