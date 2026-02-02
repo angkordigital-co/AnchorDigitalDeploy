@@ -2,10 +2,15 @@
  * Site Detail Page
  *
  * Shows project details, deployments, and webhook configuration.
+ *
+ * Force dynamic rendering to always show latest deployment status.
  */
 import { auth } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
 import { getProject, getProjectDeployments } from "@/lib/aws/dynamodb";
+
+// Disable caching - always fetch fresh deployment data
+export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { CopyButton } from "@/components/copy-button";
 import {

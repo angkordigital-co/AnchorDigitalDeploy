@@ -3,10 +3,15 @@
  *
  * Server component that displays all user's sites in a sortable table.
  * Fetches projects from DynamoDB using userId from session.
+ *
+ * Force dynamic rendering to always show latest deployment status.
  */
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { getUserProjects, getProjectDeployments } from "@/lib/aws/dynamodb";
+
+// Disable caching - always fetch fresh deployment data
+export const dynamic = "force-dynamic";
 import { SitesTable, SiteWithStatus } from "@/components/tables/sites-table";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
