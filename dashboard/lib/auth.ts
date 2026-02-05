@@ -9,7 +9,7 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, QueryCommand } from "@aws-sdk/lib-dynamodb";
+import { DynamoDBDocumentClient, QueryCommand, GetCommand } from "@aws-sdk/lib-dynamodb";
 import bcrypt from "bcryptjs";
 
 // DynamoDB client for user queries
@@ -29,8 +29,25 @@ interface DbUser {
   email: string;
   name: string;
   passwordHash: string;
+  githubUserId?: string;
+  githubUsername?: string;
+  githubAccessToken?: string;
+  githubTokenExpiresAt?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+/**
+ * Get user by userId for checking GitHub connection status
+ */
+async function getUserById(userId: string): Promise<DbUser | null> {
+  const result = await docClient.send(
+    new GetCommand({
+      TableName: USERS_TABLE_NAME,
+      Key: { userId },
+    })
+  );
+  return result.Item as DbUser | null;
 }
 
 /**
@@ -100,17 +117,27 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
     signIn: "/login",
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
       // On sign in, add userId to token
       if (user) {
         token.userId = user.id;
       }
+      // Refresh GitHub connection status on sign in or update
+      if ((user || trigger === "update") && token.userId && typeof token.userId === "string") {
+        const dbUser = await getUserById(token.userId);
+        if (dbUser) {
+          token.hasGitHubConnection = !!dbUser.githubAccessToken;
+          token.githubUsername = dbUser.githubUsername;
+        }
+      }
       return token;
     },
     async session({ session, token }) {
-      // Expose userId in session
+      // Expose userId and GitHub status in session
       if (session.user && token.userId) {
         session.user.id = token.userId as string;
+        session.user.hasGitHubConnection = (token.hasGitHubConnection as boolean | undefined) ?? false;
+        session.user.githubUsername = token.githubUsername as string | undefined;
       }
       return session;
     },

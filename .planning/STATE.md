@@ -2,20 +2,20 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-02-02)
+See: .planning/PROJECT.md (updated 2026-02-05)
 
 **Core value:** When a developer pushes to main, the Next.js site is automatically built and deployed to production with zero manual intervention.
 
-**Current focus:** v1.0 shipped — planning next milestone
+**Current focus:** v1.1 GitHub OAuth integration complete
 
 ## Current Position
 
-Phase: v1.0 complete
-Plan: All 11 plans complete
-Status: Milestone shipped
-Last activity: 2026-02-02 — v1.0 milestone complete
+Phase: v1.1 GitHub OAuth
+Plan: GitHub integration features complete
+Status: Feature shipped
+Last activity: 2026-02-05 — v1.1 GitHub OAuth integration
 
-Progress: [##########] 100% (v1.0 shipped)
+Progress: [##########] 100% (v1.1 GitHub OAuth shipped)
 
 ## Performance Metrics
 
@@ -67,8 +67,8 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-02-02
-Stopped at: v1.0 milestone complete
+Last session: 2026-02-05
+Stopped at: v1.1 GitHub OAuth complete
 Resume file: None
 
 ## Milestone v1.0 Complete
@@ -78,4 +78,12 @@ Resume file: None
 - 37/37 requirements complete
 - 141 files, 33,723 lines TypeScript
 
-**Next step:** `/gsd:new-milestone` to plan v1.1
+## Milestone v1.1 Complete
+
+**Shipped 2026-02-05:**
+- GitHub OAuth integration
+- Repository selector component
+- Automatic webhook creation
+- Settings page for integrations
+
+**Next step:** `/gsd:new-milestone` to plan v1.2

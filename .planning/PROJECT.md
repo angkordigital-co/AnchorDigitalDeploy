@@ -26,7 +26,10 @@ When a developer pushes to main, the Next.js site is automatically built and dep
 
 ### Active
 
-(None — planning v1.1 scope in next milestone)
+- ✓ GitHub OAuth integration for streamlined site creation — v1.1
+- ✓ Repository selection dropdown from connected GitHub account — v1.1
+- ✓ Automatic webhook creation on site creation — v1.1
+- ✓ Settings page for managing integrations — v1.1
 
 ### Out of Scope
 
@@ -40,7 +43,7 @@ When a developer pushes to main, the Next.js site is automatically built and dep
 
 ## Context
 
-Shipped v1.0 MVP with 33,723 lines of TypeScript across 141 files.
+Shipped v1.0 MVP with 33,723 lines of TypeScript across 141 files. v1.1 adds GitHub OAuth integration for streamlined site creation.
 
 **Tech stack:**
 - SST Ion v3 for infrastructure-as-code
@@ -82,4 +85,4 @@ Shipped v1.0 MVP with 33,723 lines of TypeScript across 141 files.
 | ACM in us-east-1 | CloudFront requires us-east-1 certs | ✓ Good — automatic integration |
 
 ---
-*Last updated: 2026-02-02 after v1.0 milestone*
+*Last updated: 2026-02-05 — v1.1 GitHub OAuth integration*

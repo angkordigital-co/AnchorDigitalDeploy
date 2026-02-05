@@ -6,8 +6,9 @@
 import { auth } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
+import { DynamoDBDocumentClient, PutCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import crypto from "crypto";
+import { createWebhook } from "@/lib/github";
 
 const client = new DynamoDBClient({
   region: process.env.AWS_REGION || "ap-southeast-1",
@@ -25,7 +26,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { name, repoUrl } = body;
+    const { name, repoUrl, autoWebhook } = body;
 
     if (!name || !repoUrl) {
       return NextResponse.json(
@@ -63,6 +64,7 @@ export async function POST(request: NextRequest) {
       repoName,
       defaultBranch: body.defaultBranch || "main",
       webhookSecret,
+      webhookStatus: autoWebhook ? "pending" : "manual",
       envVars: {},
       createdAt: now,
       updatedAt: now,
@@ -74,6 +76,44 @@ export async function POST(request: NextRequest) {
         Item: project,
       })
     );
+
+    // If auto-webhook requested, create it
+    if (autoWebhook) {
+      const webhookUrl = `${process.env.API_GATEWAY_URL}/webhook/${projectId}`;
+      const webhookResult = await createWebhook(
+        session.user.id,
+        repoOwner,
+        repoName,
+        webhookUrl,
+        webhookSecret
+      );
+
+      // Update project with webhook status
+      const updateExpression = webhookResult.success
+        ? "SET webhookId = :webhookId, webhookStatus = :status, updatedAt = :now"
+        : "SET webhookStatus = :status, updatedAt = :now";
+
+      const expressionValues: Record<string, unknown> = {
+        ":status": webhookResult.success ? "active" : "failed",
+        ":now": new Date().toISOString(),
+      };
+
+      if (webhookResult.success) {
+        expressionValues[":webhookId"] = webhookResult.id.toString();
+        project.webhookStatus = "active";
+      } else {
+        project.webhookStatus = "failed";
+      }
+
+      await dynamodb.send(
+        new UpdateCommand({
+          TableName: PROJECTS_TABLE_NAME,
+          Key: { projectId },
+          UpdateExpression: updateExpression,
+          ExpressionAttributeValues: expressionValues,
+        })
+      );
+    }
 
     return NextResponse.json({ project }, { status: 201 });
   } catch (error) {

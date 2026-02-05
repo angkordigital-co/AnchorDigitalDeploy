@@ -11,14 +11,15 @@ A comprehensive guide to using Anchor Deploy, the self-hosted serverless deploym
 3. [Configuration](#configuration)
 4. [Getting Started](#getting-started)
 5. [Authentication](#authentication)
-6. [Managing Sites](#managing-sites)
-7. [Deployments](#deployments)
-8. [Environment Variables](#environment-variables)
-9. [Custom Domains](#custom-domains)
-10. [Logs](#logs)
-11. [Metrics](#metrics)
-12. [Costs](#costs)
-13. [Troubleshooting](#troubleshooting)
+6. [Settings](#settings)
+7. [Managing Sites](#managing-sites)
+8. [Deployments](#deployments)
+9. [Environment Variables](#environment-variables)
+10. [Custom Domains](#custom-domains)
+11. [Logs](#logs)
+12. [Metrics](#metrics)
+13. [Costs](#costs)
+14. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -261,6 +262,10 @@ API_GATEWAY_URL=https://abc123.execute-api.ap-southeast-1.amazonaws.com
 
 # Optional: Enable debug logging
 AUTH_DEBUG=true
+
+# Optional: GitHub OAuth (for GitHub integration feature)
+GITHUB_CLIENT_ID=your-github-oauth-app-client-id
+GITHUB_CLIENT_SECRET=your-github-oauth-app-client-secret
 ```
 
 | Variable | Required | Description |
@@ -268,6 +273,22 @@ AUTH_DEBUG=true
 | `AUTH_SECRET` | Yes | Encrypts JWT session tokens. Generate with `openssl rand -base64 32` |
 | `API_GATEWAY_URL` | Yes | Backend API endpoint from SST outputs |
 | `AUTH_DEBUG` | No | Enable verbose auth logging |
+| `GITHUB_CLIENT_ID` | No | GitHub OAuth App client ID (enables GitHub integration) |
+| `GITHUB_CLIENT_SECRET` | No | GitHub OAuth App client secret |
+
+### GitHub OAuth Setup (Optional)
+
+To enable GitHub integration (repository selection dropdown, automatic webhook creation):
+
+1. Go to GitHub → Settings → Developer settings → OAuth Apps
+2. Click **New OAuth App**
+3. Fill in:
+   - **Application name**: Anchor Deploy
+   - **Homepage URL**: Your dashboard URL
+   - **Authorization callback URL**: `https://your-dashboard-url/api/github/callback`
+4. Click **Register application**
+5. Copy the **Client ID** and generate a **Client secret**
+6. Add both to your `dashboard/.env.local`
 
 ### GitHub Webhook Configuration
 
@@ -421,6 +442,50 @@ Contact your administrator to reset your password. Self-service password reset i
 
 ---
 
+## Settings
+
+The **Settings** page lets you manage your account and integrations.
+
+### Accessing Settings
+
+Click **Settings** in the navigation menu to access your settings page.
+
+### GitHub Integration
+
+Connect your GitHub account to enable streamlined site creation:
+
+#### Connecting GitHub
+
+1. Go to **Settings**
+2. In the **Integrations** section, click **Connect** next to GitHub
+3. Authorize Anchor Deploy on GitHub
+4. You'll be redirected back with a success message
+
+#### Benefits of GitHub Connection
+
+| Feature | Without GitHub | With GitHub |
+|---------|----------------|-------------|
+| Repository selection | Manual URL entry | Dropdown selector |
+| Webhook creation | Manual configuration | Automatic |
+| Branch detection | Manual entry | Auto-detected |
+
+#### Disconnecting GitHub
+
+1. Go to **Settings**
+2. Click **Disconnect** next to your GitHub username
+3. Confirm the disconnection
+
+**Note**: Disconnecting GitHub does not remove webhooks from your repositories. You'll need to remove those manually from GitHub if desired.
+
+### Account Information
+
+The Account section displays:
+
+- Your name
+- Your email address
+
+---
+
 ## Managing Sites
 
 The **Sites** page is your central hub for all deployed applications.
@@ -440,16 +505,38 @@ Click any site row to view its details.
 
 ### Adding a New Site
 
+There are two ways to add a site depending on whether you've connected your GitHub account.
+
+#### With GitHub Connected (Recommended)
+
 1. Click the **Add Site** button
-2. Enter the site name
-3. Provide the GitHub repository URL (e.g., `https://github.com/org/repo`)
-4. Click **Create**
+2. Select a repository from the dropdown
+3. The site name, URL, and default branch are auto-filled
+4. Optionally uncheck "Automatically create webhook" if you prefer manual setup
+5. Click **Create Site**
+
+The webhook is automatically created on your GitHub repository, so deployments will trigger immediately when you push to main.
+
+#### Without GitHub Connected
+
+1. Click the **Add Site** button
+2. Enter the GitHub repository URL (e.g., `https://github.com/org/repo`)
+3. Enter a site name
+4. Enter the default branch (usually `main`)
+5. Click **Create Site**
 
 After creation, you'll need to:
 
 1. Add the webhook URL to your GitHub repository settings
 2. Configure any required environment variables
 3. Push to main to trigger your first deployment
+
+#### Switching Between Modes
+
+When adding a site with GitHub connected, you can:
+
+- Click "Enter URL manually" to switch to manual mode
+- Click "Select from GitHub" to switch back to the repository dropdown
 
 ### Site Navigation
 
@@ -884,8 +971,8 @@ For assistance:
 
 ---
 
-*Last updated: 2026-02-02*
-*Anchor Deploy v1.0*
+*Last updated: 2026-02-05*
+*Anchor Deploy v1.1*
 
 ---
 

@@ -16,6 +16,8 @@ export interface Project {
   repoName: string;
   defaultBranch: string;
   webhookSecret?: string;
+  webhookId?: string;
+  webhookStatus?: 'pending' | 'active' | 'failed' | 'manual';
   envVars?: Record<string, { value: string; isSecret: boolean }>;
   // Lambda function info (set during deployment by deploy-handler)
   serverFunctionName?: string;
@@ -50,6 +52,10 @@ export interface User {
   email: string;
   name: string;
   passwordHash: string;
+  githubUserId?: string;
+  githubUsername?: string;
+  githubAccessToken?: string;
+  githubTokenExpiresAt?: string;
   createdAt: string;
   updatedAt: string;
 }

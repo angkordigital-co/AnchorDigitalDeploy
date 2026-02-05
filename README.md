@@ -11,6 +11,7 @@ A self-hosted serverless deployment platform for Next.js applications on AWS. Pu
 - **Environment Variables** — Securely manage build-time and runtime config
 - **Full Observability** — View logs, performance metrics, and AWS cost breakdown
 - **Web Dashboard** — Manage all sites from a single interface
+- **GitHub OAuth Integration** — Connect your GitHub account to select repos and auto-create webhooks
 
 ## Architecture
 
@@ -195,6 +196,8 @@ Add a webhook to your GitHub repository:
 |----------|-------------|
 | `AUTH_SECRET` | Auth.js session encryption key |
 | `API_GATEWAY_URL` | Backend API endpoint |
+| `GITHUB_CLIENT_ID` | GitHub OAuth App client ID (optional, for GitHub integration) |
+| `GITHUB_CLIENT_SECRET` | GitHub OAuth App secret (optional, for GitHub integration) |
 
 ## Deployment
 
